@@ -5,6 +5,7 @@
 {"name":"roundtrip > should roundtrip spread items in sublists (2)","input":"* 1. Lorem ipsum dolor sit amet\n\n  2. consectetur adipisicing elit\n","syntax":[]},
 {"name":"roundtrip > should roundtrip spread items in sublists (3)","input":"* hello\n  * world\n    how\n\n    are\n    you\n\n  * today\n* hi\n","syntax":[]},
 {"name":"roundtrip > should roundtrip autolinks w/ potentially escapable characters","input":"An autolink: <http://example.com/?foo=1&bar=2>.\n","syntax":[]},
+{"name":"roundtrip > should roundtrip astral characters around attention","input":"&#x1F4A1;**&#x20;a&#x20;**&#x1F4A1;\n","syntax":[]},
 {"name":"roundtrip > should roundtrip autolinks w/ backslashes","input":"<aa:\\>\n","syntax":[]},
 {"name":"roundtrip > should roundtrip autolinks w/ escapes and references","input":"<aa:\\*>\n<aa:\\[\\>\n<aa:&amp;>\n","syntax":[]},
 {"name":"roundtrip > should roundtrip potential prototype injections","input":"A [primary][toString], [secondary][constructor], and [tertiary][__proto__] link.\n\n[toString]: http://primary.com\n\n[__proto__]: http://tertiary.com\n\n[constructor]: http://secondary.com\n","syntax":[]},

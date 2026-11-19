@@ -42,6 +42,12 @@ const enum CharacterKind {
   Whitespace = 1,
   Punctuation = 2,
 }
+const enum Surrogate {
+  HighStart = 0xd800,
+  HighEnd = 0xdbff,
+  LowStart = 0xdc00,
+  LowEnd = 0xdfff,
+}
 import type { Nodes } from './types.ts'
 import type * as M from './types.ts'
 import {
@@ -322,6 +328,10 @@ function checkEmphasis(state: State) {
 function encodeCharacterReference(code: number) {
   return '&#x' + code.toString(16).toUpperCase() + ';'
 }
+function encodeCodePoint(character: string) {
+  const code = character.codePointAt(0)
+  return code === undefined ? '' : encodeCharacterReference(code)
+}
 function markdownLineEndingOrSpace(code: number) {
   return code < 0 || code === Char.Space
 }
@@ -380,15 +390,23 @@ function emphasis(node: M.Emphasis, _: any, state: State, info: Info) {
       ...tracker.current(),
     }),
   )
-  const betweenHead = content.charCodeAt(0)
-  const open = encodeInfo(info.before.charCodeAt(info.before.length - 1), betweenHead, marker)
-  if (open.inside) {
-    content = encodeCharacterReference(betweenHead) + content.slice(1)
+  const betweenHead = firstCharacter(content)
+  const open = encodeInfo(
+    info.before.charCodeAt(info.before.length - 1),
+    betweenHead.charCodeAt(0),
+    marker,
+  )
+  if (open.inside && betweenHead) {
+    content = encodeCodePoint(betweenHead) + content.slice(betweenHead.length)
   }
-  const betweenTail = content.charCodeAt(content.length - 1)
-  const close = encodeInfo(info.after.charCodeAt(0), betweenTail, marker)
-  if (close.inside) {
-    content = content.slice(0, -1) + encodeCharacterReference(betweenTail)
+  const betweenTail = lastCharacter(content)
+  const close = encodeInfo(
+    info.after.charCodeAt(0),
+    betweenTail.charCodeAt(betweenTail.length - 1),
+    marker,
+  )
+  if (close.inside && betweenTail) {
+    content = content.slice(0, content.length - betweenTail.length) + encodeCodePoint(betweenTail)
   }
   const after = tracker.move(marker)
   exit()
@@ -930,15 +948,23 @@ function strong(node: M.Strong, _: any, state: State, info: Info) {
       ...tracker.current(),
     }),
   )
-  const betweenHead = content.charCodeAt(0)
-  const open = encodeInfo(info.before.charCodeAt(info.before.length - 1), betweenHead, marker)
-  if (open.inside) {
-    content = encodeCharacterReference(betweenHead) + content.slice(1)
+  const betweenHead = firstCharacter(content)
+  const open = encodeInfo(
+    info.before.charCodeAt(info.before.length - 1),
+    betweenHead.charCodeAt(0),
+    marker,
+  )
+  if (open.inside && betweenHead) {
+    content = encodeCodePoint(betweenHead) + content.slice(betweenHead.length)
   }
-  const betweenTail = content.charCodeAt(content.length - 1)
-  const close = encodeInfo(info.after.charCodeAt(0), betweenTail, marker)
-  if (close.inside) {
-    content = content.slice(0, -1) + encodeCharacterReference(betweenTail)
+  const betweenTail = lastCharacter(content)
+  const close = encodeInfo(
+    info.after.charCodeAt(0),
+    betweenTail.charCodeAt(betweenTail.length - 1),
+    marker,
+  )
+  if (close.inside && betweenTail) {
+    content = content.slice(0, content.length - betweenTail.length) + encodeCodePoint(betweenTail)
   }
   const after = tracker.move(marker + marker)
   exit()
@@ -956,7 +982,7 @@ function textPeek(node: M.Text, parent: any, state: State, info: Info) {
   const value = node.value || ''
   const code = value.charCodeAt(0)
   if (!state.rules.custom && code !== 92 && !state.rules.characters[code])
-    return value.charAt(0)
+    return highSurrogate(code) ? value.slice(0, 2) : value.charAt(0)
   // Built-in rules inspect at most one following character; include the neighbor's context too.
   if (!state.rules.custom)
     return safe(state, value.slice(0, 2), {
@@ -1178,6 +1204,23 @@ function association(node: { label?: string | null; identifier?: string }) {
   }
   return decodeString(node.identifier)
 }
+function highSurrogate(code: number) {
+  return code >= Surrogate.HighStart && code <= Surrogate.HighEnd
+}
+function lowSurrogate(code: number) {
+  return code >= Surrogate.LowStart && code <= Surrogate.LowEnd
+}
+function firstCharacter(value: string) {
+  return highSurrogate(value.charCodeAt(0)) && lowSurrogate(value.charCodeAt(1))
+    ? value.slice(0, 2)
+    : value.charAt(0)
+}
+function lastCharacter(value: string) {
+  const last = value.length - 1
+  return lowSurrogate(value.charCodeAt(last)) && highSurrogate(value.charCodeAt(last - 1))
+    ? value.slice(-2)
+    : value.slice(-1)
+}
 function containerPhrasing(parent: any, state: State, info: Info) {
   // ── Peek neighbors, serialize each child, then repair attention boundaries ──
   const indexStack = state.indexStack
@@ -1198,12 +1241,14 @@ function containerPhrasing(parent: any, state: State, info: Info) {
       if (nextHandler && nextHandler.peek) nextHandler = nextHandler.peek
       const current = tracker.current()
       after = nextHandler
-        ? nextHandler(children[index + 1], parent, state, {
-            before: '',
-            after: '',
-            now: current.now,
-            lineShift: current.lineShift,
-          }).charAt(0)
+        ? firstCharacter(
+            nextHandler(children[index + 1], parent, state, {
+              before: '',
+              after: '',
+              now: current.now,
+              lineShift: current.lineShift,
+            }),
+          )
         : ''
     } else {
       after = info.after
@@ -1229,28 +1274,25 @@ function containerPhrasing(parent: any, state: State, info: Info) {
             state,
             state.customHandlers ? { ...childInfo } : childInfo,
           )
-    if (encodeAfter && encodeAfter === value.slice(0, 1)) {
-      value = encodeCharacterReference(encodeAfter.charCodeAt(0)) + value.slice(1)
+    if (encodeAfter && encodeAfter === firstCharacter(value)) {
+      value = encodeCodePoint(encodeAfter) + value.slice(encodeAfter.length)
     }
     // Attention handlers may request encoding on the preceding or following sibling.
     const encodingInfo = state.attentionEncodeSurroundingInfo
     state.attentionEncodeSurroundingInfo = void 0
     encodeAfter = void 0
     if (encodingInfo) {
-      if (
-        results.length > 0 &&
-        encodingInfo.before &&
-        before === results[results.length - 1].slice(-1)
-      ) {
+      const previous = results[results.length - 1]
+      if (previous !== undefined && encodingInfo.before && before === lastCharacter(previous)) {
         results[results.length - 1] =
-          results[results.length - 1].slice(0, -1) +
-          encodeCharacterReference(before.charCodeAt(0))
+          previous.slice(0, previous.length - before.length) + encodeCodePoint(before)
       }
       if (encodingInfo.after) encodeAfter = after
     }
+    if (!value) continue
     tracker.move(value)
     results.push(value)
-    before = value.slice(-1)
+    before = lastCharacter(value)
   }
   indexStack.pop()
   return results.join('')

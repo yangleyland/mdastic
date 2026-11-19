@@ -2,5 +2,5 @@ packages:
   - ./*
 
 overrides:
-  mdast-util-to-markdown: github:syntax-tree/mdast-util-to-markdown#2facc8f570b6461b9882d867e5511dbbcb5daba6
+  mdast-util-to-markdown: github:syntax-tree/mdast-util-to-markdown#7ce8eaed9edf72296386259ee1cadf80ec495cab
 blockExoticSubdeps: false

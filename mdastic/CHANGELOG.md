@@ -3,6 +3,7 @@
 ## Unreleased
 
 1. **Autolinks are not escaped with backslashes.** Character escapes and references do not work in autolinks, so `stringify` keeps `\` as is and percent-encodes the characters an autolink cannot hold (`<`, `>`, controls, space, and characters custom `unsafe` patterns mark in `autolink`). References and autolinks in GFM table cells keep the `\|` escape. Matches `mdast-util-to-markdown` `2facc8f`.
+2. **Astral characters around attention are encoded whole.** An emoji that must be encoded next to emphasis or strong becomes one character reference (`&#x1F600;`) instead of a lone surrogate plus a reference to the other half. Matches `mdast-util-to-markdown` `7ce8eae`.
 
 ## 0.5.1
 
