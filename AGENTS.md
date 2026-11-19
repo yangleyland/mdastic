@@ -188,11 +188,13 @@ Do not recursively call `parseDocument` from a hook: the arena is reused. Use th
 
 ## Serializer architecture
 
-`stringify.ts` is a behavior port of `mdast-util-to-markdown@2.1.2` (switch dispatch, same
+`stringify.ts` is a behavior port of `mdast-util-to-markdown` at the oracle's pinned commit (switch dispatch, same
 handlers, `join`, `unsafe`, association). `stringify-extensions.ts` ports the gfm, mdx and
 frontmatter handlers. `stringify-safe.ts` compiles the `unsafe` patterns once per config into
 per-scope candidate tables, so `safe()` scans each value once instead of running every regex.
 
+- Autolinks percent-encode the characters they cannot hold. Autolinks and reference labels drop
+  only the `phrasing` scope, so enclosing constructs such as table cells still escape `|`.
 - Position tracking only runs when custom `handlers` or a finite MDX `printWidth` need it.
 - **Fragile:** escaping peeks at most one character into the next text node. This assumes the
   built-in unsafe rules never look further. Custom `unsafe` patterns take the full regex path.
@@ -209,10 +211,12 @@ per-scope candidate tables, so `safe()` scans each value once instead of running
 ### The oracle
 
 `conformance/src/oracle.ts` runs the real remark stack, pinned to exact versions in
-`conformance/package.json` (mdast-util-from-markdown 2.0.3, mdast-util-to-markdown 2.1.2,
+`conformance/package.json` (mdast-util-from-markdown 2.0.3, mdast-util-to-markdown at git commit `2facc8f`,
 micromark-extension-gfm 3.0.0, -mdxjs 3.0.0, -frontmatter 2.0.0, -math 3.1.0, mdast-util-math 3.0.0,
 micromark-heading-id 2.0.0). Extensions are registered in safe-mdx / holocron order: mdx,
-frontmatter `['yaml', 'toml']`, gfm, math (remark-math defaults), then headingId. Upgrading the
+frontmatter `['yaml', 'toml']`, gfm, math (remark-math defaults), then headingId. A pnpm
+override in `pnpm-workspace.yaml` makes remark-stringify and every to-markdown extension resolve
+the same mdast-util-to-markdown commit (`blockExoticSubdeps: false` allows that git dependency). Upgrading the
 oracle means rerunning everything; differences become work.
 
 ```text
@@ -243,7 +247,7 @@ markdown inputs is useful, even suites that only assert HTML.
 | micromark-extension-math, mdast-util-math, remark-math, Sätteri and pulldown-cmark math tests; d2l-en; real documents with `$` | `scripts/extract-math.ts` |
 | hand-written bugs and edge cases | `conformance/fixtures/regressions.json`, `smoke.json` |
 
-`conformance/stringify-fixtures/` holds 838 hand-built trees with options, captured from the
+`conformance/stringify-fixtures/` holds 647 hand-built trees with options, captured from the
 upstream `toMarkdown` tests. Candidate suites not yet extracted are in `docs/test-suites.md`.
 
 ### Adding fixtures

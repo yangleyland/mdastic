@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+1. **Autolinks are not escaped with backslashes.** Character escapes and references do not work in autolinks, so `stringify` keeps `\` as is and percent-encodes the characters an autolink cannot hold (`<`, `>`, controls, space, and characters custom `unsafe` patterns mark in `autolink`). References and autolinks in GFM table cells keep the `\|` escape. Matches `mdast-util-to-markdown` `2facc8f`.
+
 ## 0.5.1
 
 1. **Unclosed `<!--` comments with `htmlComments` follow CommonMark.** A comment that starts a block and never closes now runs to the end of its container, like a browser hides the rest of the page, instead of returning an MDX error.

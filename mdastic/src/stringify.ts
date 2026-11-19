@@ -166,7 +166,7 @@ function hardBreak(_: any, _1: any, state: State, info: Info) {
       state.unsafe[index].character === '\n' &&
       patternInScope(state.stack, state.unsafe[index])
     ) {
-      return /[ \t]/.test(info.before) ? '' : ' '
+      return /[\t ]/.test(info.before) ? '' : ' '
     }
   }
   return '\\\n'
@@ -536,7 +536,7 @@ function imageReference(node: M.ImageReference, _: any, state: State, info: Info
   subexit()
   // Reference labels escape independently of their enclosing phrasing scope.
   const stack = state.stack
-  state.stack = []
+  state.stack = stack.filter(notPhrasing)
   subexit = state.enter('reference')
   const reference = state.safe(state.associationId(node), {
     before: value,
@@ -553,6 +553,9 @@ function imageReference(node: M.ImageReference, _: any, state: State, info: Info
     value += tracker.move(']')
   }
   return value
+}
+function notPhrasing(name: string) {
+  return name !== 'phrasing'
 }
 function imageReferencePeek() {
   return '!'
@@ -611,7 +614,7 @@ function formatLinkAsAutolink(node: M.Link, state: State) {
       node.children.length === 1 &&
       node.children[0].type === 'text' &&
       (raw === node.url || 'mailto:' + raw === node.url) &&
-      /^[a-z][a-z+.-]+:/i.test(node.url) &&
+      /^[a-z][+\-.a-z]+:/i.test(node.url) &&
       !/[\0- <>\u007F]/.test(node.url),
   )
 }
@@ -625,7 +628,7 @@ function link(node: M.Link, _: any, state: State, info: Info) {
   if (formatLinkAsAutolink(node, state)) {
     // Autolinks reset scope so enclosing constructs do not escape the URL text.
     const stack = state.stack
-    state.stack = []
+    state.stack = stack.filter(notPhrasing)
     exit = state.enter('autolink')
     let autolinkValue = tracker.move('<')
     autolinkValue += tracker.move(
@@ -701,7 +704,7 @@ function linkReference(node: M.LinkReference, _: any, state: State, info: Info) 
   value += tracker.move(labelText + '][')
   subexit()
   const stack = state.stack
-  state.stack = []
+  state.stack = stack.filter(notPhrasing)
   subexit = state.enter('reference')
   const reference = state.safe(state.associationId(node), {
     before: value,
@@ -1134,7 +1137,13 @@ const unsafe: Unsafe[] = [
     notInConstruct: fullPhrasingSpans,
   },
   { atBreak: true, character: '~' },
+  { character: '<', inConstruct: 'autolink' },
+  { character: '>', inConstruct: 'autolink' },
+  { character: '\u007F', inConstruct: 'autolink' },
 ]
+for (let code = 0; code <= Char.Space; code++) {
+  unsafe.push({ character: String.fromCharCode(code), inConstruct: 'autolink' })
+}
 function decodeString(value: string): string {
   // Same CommonMark invalid-code-point rules as scan.ts; this path also handles labels.
   return value.replace(

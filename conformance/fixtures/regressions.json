@@ -2555,5 +2555,9 @@
   {"name": "MDX end-tag mismatch error is the closing tag range", "input": "<Heading>text</Cards>", "syntax": ["mdx", "frontmatter", "gfm"]},
   {"name": "MDX non-ESM error is the statement range", "input": "export const a = 1\nlet b = 2", "syntax": ["mdx", "frontmatter", "gfm"]},
   {"name": "MDX unclosed fence in an open flow tag keeps the list item end", "input": "- <A>\n  ```\n  x\n- b", "syntax": ["mdx", "frontmatter", "gfm"]},
-  {"name": "MDX unclosed fence in a list in an open flow tag in a footnote", "input": "[^a]:<A>\n    - ```\n      x\n", "syntax": ["mdx", "frontmatter", "gfm"]}
+  {"name": "MDX unclosed fence in a list in an open flow tag in a footnote", "input": "[^a]:<A>\n    - ```\n      x\n", "syntax": ["mdx", "frontmatter", "gfm"]},
+  {"name": "stringify: backslashes in autolinks are not escaped", "input": "<aa:\\>", "syntax": []},
+  {"name": "stringify: character escapes and references in autolinks stay literal", "input": "<aa:\\*&amp;>", "syntax": []},
+  {"name": "stringify: references in table cells keep the cell pipe escape", "input": "| a |\n| - |\n| [x][a\\|b] |\n\n[a\\|b]: c", "syntax": ["gfm"]},
+  {"name": "stringify: image references in table cells keep the cell pipe escape", "input": "| a |\n| - |\n| ![x][a\\|b] |\n\n[a\\|b]: c", "syntax": ["gfm"]}
 ]

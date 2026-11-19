@@ -17,6 +17,7 @@ const enum EscapeFlag {
   Match = 4,
 }
 const HEX_ESCAPE_WIDTH = 4
+const PERCENT_WIDTH = 2
 
 export interface Unsafe {
   character: string
@@ -50,6 +51,7 @@ interface Rule {
 export interface ScopedRules {
   characters: (Rule[] | undefined)[]
   expression: RegExp
+  percentEncode: boolean
 }
 export interface RuleTable {
   characters: (Rule[] | undefined)[]
@@ -140,7 +142,7 @@ export function compilePattern(pattern: Unsafe): RegExp {
     const before =
       (pattern.atBreak ? '[\\r\\n][\\t ]*' : '') +
       (pattern.before ? '(?:' + pattern.before + ')' : '')
-    const character = pattern.character.replace(/[|\\{}()[\]^$+*?.-]/g, '\\$&')
+    const character = pattern.character.replace(/[$()*+.?[\\\]^{|}]/g, '\\$&')
     expression = new RegExp(
       (before ? '(' + before + ')' : '') +
         character +
@@ -184,6 +186,7 @@ function scopedRules(table: RuleTable, stack: string[]): ScopedRules {
     result = {
       characters,
       expression: new RegExp(alternatives.join('|') || '(?!)', 'g'),
+      percentEncode: stack.includes('autolink'),
     }
     table.scopes.set(key, result)
   }
@@ -273,10 +276,11 @@ export function safe(
   const table = state.rules
   const scope = state.scopedRules || scopedRules(table, state.stack)
   if (!state.customHandlers) state.scopedRules = scope
-  const { characters, expression } = scope
+  const { characters, expression, percentEncode } = scope
   expression.lastIndex = 0
   let candidate = table.custom ? null : expression.exec(value)
-  if (!table.custom && !candidate) return escapeBackslashes(input || '', suffix)
+  if (!table.custom && !candidate)
+    return percentEncode ? input || '' : escapeBackslashes(input || '', suffix)
   const next = table.next
   next.fill(0)
   const matches: number[] = []
@@ -355,14 +359,21 @@ export function safe(
       (flags & EscapeFlag.Before && position && matches[position - 1] === EscapeFlag.Match)
     )
       continue
-    if (start !== position) result += escapeBackslashes(value.slice(start, position), '\\')
+    if (start !== position) {
+      const slice = value.slice(start, position)
+      result += percentEncode ? slice : escapeBackslashes(slice, '\\')
+    }
     start = position
     const code = value.charCodeAt(position)
-    if (punctuation(code) && !config.encode?.includes(value[position])) result += '\\'
+    if (percentEncode) {
+      result += '%' + code.toString(16).toUpperCase().padStart(PERCENT_WIDTH, '0')
+      start++
+    } else if (punctuation(code) && !config.encode?.includes(value[position])) result += '\\'
     else {
       result += '&#x' + code.toString(16).toUpperCase() + ';'
       start++
     }
   }
-  return result + escapeBackslashes(value.slice(start, end), suffix)
+  const rest = value.slice(start, end)
+  return result + (percentEncode ? rest : escapeBackslashes(rest, suffix))
 }
