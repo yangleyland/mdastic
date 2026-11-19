@@ -1,4 +1,4 @@
-// CommonMark serializer ported from mdast-util-to-markdown 2.1.2 (MIT, Titus Wormer).
+// CommonMark serializer ported from mdast-util-to-markdown 2.2.3 (MIT, Titus Wormer).
 // Core handlers coordinate construct scopes and sibling context for exact escaping.
 /*
 Copyright (c) Titus Wormer <tituswormer@gmail.com>
@@ -378,7 +378,7 @@ emphasis.peek = emphasisPeek
 function emphasis(node: M.Emphasis, _: any, state: State, info: Info) {
   const exit = state.enter('phrasing')
   const item = attentionItem(node, emphasisAttention, state, state.createTracker(info))
-  const value = serializeItems([item], info.before, info.after)
+  const value = item ? serializeItems([item], info.before, info.after) : ''
   exit()
   return value
 }
@@ -923,7 +923,7 @@ strong.peek = strongPeek
 function strong(node: M.Strong, _: any, state: State, info: Info) {
   const exit = state.enter('phrasing')
   const item = attentionItem(node, strongAttention, state, state.createTracker(info))
-  const value = serializeItems([item], info.before, info.after)
+  const value = item ? serializeItems([item], info.before, info.after) : ''
   exit()
   return value
 }
@@ -1534,6 +1534,7 @@ function phrasingItems(parent: any, state: State, info: Info): Item[] {
       const handler = state.handle.handlers[child.type]
       if (handler && handler.attention) {
         const item = attentionItem(child, handler.attention, state, tracker)
+        if (!item) continue
         results.push(item)
         before = lastCharacter(item.sequences[0])
         continue
@@ -1563,7 +1564,7 @@ function attentionItem(
   attention: Attention,
   state: State,
   tracker: Tracker,
-): AttentionResult {
+): AttentionResult | undefined {
   const spec = attention(node, state)
   const sequences =
     knownSequences.get(spec) || attentionSequences(node.type, spec.markers, spec.sizes)
@@ -1579,12 +1580,61 @@ function attentionItem(
     lineShift: current.lineShift,
   })
   exit()
+  if (children.length === 0) return
   if (tracker !== untracked) {
     tracker.move(sequence)
     tracker.move(serializeItems(children, sequence, sequence))
     tracker.move(sequence)
   }
   return { children, sequences }
+}
+function fix(
+  items: Item[],
+  chosen: Map<AttentionResult, string>,
+  before: string,
+  after: string,
+): Token[] | undefined {
+  let tokens = render(items, chosen, before, after)
+  let mistake = check(tokens, before, after)
+  while (mistake) {
+    const next = improve(items, chosen, mistake, before, after)
+    if (!next) return
+    chosen = next.chosen
+    tokens = next.tokens
+    mistake = next.mistake
+  }
+  return tokens
+}
+function guess(
+  items: Item[],
+  chosen: Map<AttentionResult, string>,
+  before: string,
+  after: string,
+) {
+  let previous = before
+  let index = -1
+  while (++index < items.length) {
+    const item = items[index]
+    if (typeof item === 'string') {
+      previous = ''
+      continue
+    }
+    const next = index === items.length - 1 ? after : ''
+    let sequence = item.sequences[0]
+    for (const value of item.sequences) {
+      const marker = value.charAt(0)
+      if (
+        (marker !== previous.charAt(0) && marker !== next.charAt(0)) ||
+        (items.length === 1 && strictMarkers.has(marker) && value.length > before.length)
+      ) {
+        sequence = value
+        break
+      }
+    }
+    if (sequence !== item.sequences[0]) chosen.set(item, sequence)
+    guess(item.children, chosen, sequence, sequence)
+    previous = sequence
+  }
 }
 function render(
   items: Item[],
@@ -1618,14 +1668,14 @@ function render(
           : chosen.get(next) || next.sequences[0],
     )
     const inside = render(item.children, chosen, sequence, sequence)
-    const head = inside.length > 0 ? inside[0].value : ''
+    const head = inside[0].value
     const open = encodeInfo(
       outsideBefore.charCodeAt(outsideBefore.length - 1),
       head.charCodeAt(0),
       marker,
     )
     if (open.inside) encode(inside, true)
-    const tail = inside.length > 0 ? lastCharacter(inside[inside.length - 1].value) : ''
+    const tail = lastCharacter(inside[inside.length - 1].value)
     const close = encodeInfo(outsideAfter.charCodeAt(0), tail.charCodeAt(tail.length - 1), marker)
     if (close.inside) encode(inside, false)
     if (open.outside && outsideBefore !== '\n' && outsideBefore !== '\r') encode(tokens, false)
@@ -1639,20 +1689,12 @@ function serializeItems(items: Item[], before: string, after: string): string {
   let index = -1
   while (++index < items.length) if (typeof items[index] !== 'string') break
   if (index === items.length) return items.join('')
-  let chosen = new Map<AttentionResult, string>()
-  const initial = render(items, chosen, before, after)
-  let tokens = initial
-  let mistake = check(tokens, before, after)
-  while (mistake) {
-    const next = improve(items, chosen, mistake, before, after)
-    if (!next) {
-      tokens = initial
-      break
-    }
-    chosen = next.chosen
-    tokens = next.tokens
-    mistake = next.mistake
-  }
+  const guessed = new Map<AttentionResult, string>()
+  guess(items, guessed, before, after)
+  const tokens =
+    (guessed.size > 0 ? fix(items, guessed, before, after) : undefined) ||
+    fix(items, new Map(), before, after) ||
+    render(items, new Map(), before, after)
   let result = ''
   for (const token of tokens) result += token.value
   return result

@@ -2586,5 +2586,8 @@
   {"name": "stringify: a link at the start of a line whose text could form a definition gets an empty title", "input": "x\n[`a]:`](b)", "syntax": []},
   {"name": "stringify: a link with an empty url whose text could form a definition gets an enclosed url and empty title", "input": "x\n[`a]:`]()", "syntax": []},
   {"name": "stringify: a dollar before an escaped asterisk stays escaped with math", "input": "\\$\\*", "syntax": ["math"]},
-  {"name": "stringify: a dollar before an escaped bracket stays escaped with math", "input": "a\\$\\[", "syntax": ["math"]}
+  {"name": "stringify: a dollar before an escaped bracket stays escaped with math", "input": "a\\$\\[", "syntax": ["math"]},
+  {"name": "stringify: emphasis touching strong guesses another marker so both form", "input": "_.___.__", "syntax": []},
+  {"name": "stringify: emphasis around emphasis next to an escaped marker guesses another marker", "input": "***a*~*", "syntax": ["gfm"]},
+  {"name": "stringify: strong with a lone marker inside guesses another marker", "input": "**~* a**", "syntax": ["gfm"]}
 ]

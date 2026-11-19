@@ -188,16 +188,17 @@ Do not recursively call `parseDocument` from a hook: the arena is reused. Use th
 
 ## Serializer architecture
 
-`stringify.ts` is a behavior port of `mdast-util-to-markdown` at the oracle's pinned commit (switch dispatch, same
-handlers, `join`, `unsafe`, association). `stringify-extensions.ts` ports the gfm, mdx and
-frontmatter handlers. `stringify-safe.ts` compiles the `unsafe` patterns once per config into
+`stringify.ts` is a behavior port of `mdast-util-to-markdown@2.2.3` (switch dispatch, same
+handlers, `join`, `unsafe`, association, attention). `stringify-extensions.ts` ports the gfm, mdx
+and frontmatter handlers. `stringify-safe.ts` compiles the `unsafe` patterns once per config into
 per-scope candidate tables (cached in a trie keyed by the construct stack), so `safe()` scans each
 value once instead of running every regex.
 
 - **Attention is chosen per phrasing container.** Handlers with an `attention` property (emphasis,
-  strong, gfm `delete`) become items whose sequence is picked later: `render` + `check`
-  (micromark's pairing, rule of 3), then other sequences of the attention involved in the first
-  mistake until every sequence forms its node. Plain phrasing skips this and joins strings.
+  strong, gfm `delete`) become items whose sequence is picked later: `guess` (another marker
+  where sequences would touch), then `render` + `check` (micromark's pairing, rule of 3) and other
+  sequences of the attention involved in the first mistake until every sequence forms its node.
+  Empty attention is dropped. Plain phrasing skips this and joins strings.
   Built-in specs come from `attentionSpec()`, which caches their sequences.
 - An empty `before` / `after` on an unsafe pattern counts as missing.
 - Custom `unsafe` patterns may use `beforeNode`, `afterNode` and `unicode`; text passes its
@@ -226,12 +227,12 @@ value once instead of running every regex.
 ### The oracle
 
 `conformance/src/oracle.ts` runs the real remark stack, pinned to exact versions in
-`conformance/package.json` (mdast-util-from-markdown 2.0.3, mdast-util-to-markdown at git commit `a8a1a66`,
+`conformance/package.json` (mdast-util-from-markdown 2.0.3, mdast-util-to-markdown 2.2.3,
 micromark-extension-gfm 3.0.0, -mdxjs 3.0.0, -frontmatter 2.0.0, -math 3.1.0, mdast-util-math 3.0.0,
 micromark-heading-id 2.0.0). Extensions are registered in safe-mdx / holocron order: mdx,
 frontmatter `['yaml', 'toml']`, gfm, math (remark-math defaults), then headingId. A pnpm
 override in `pnpm-workspace.yaml` makes remark-stringify and every to-markdown extension resolve
-the same mdast-util-to-markdown commit (`blockExoticSubdeps: false` allows that git dependency). Upgrading the
+the same mdast-util-to-markdown. Upgrading the
 oracle means rerunning everything; differences become work.
 
 ```text
@@ -262,7 +263,7 @@ markdown inputs is useful, even suites that only assert HTML.
 | micromark-extension-math, mdast-util-math, remark-math, Sätteri and pulldown-cmark math tests; d2l-en; real documents with `$` | `scripts/extract-math.ts` |
 | hand-written bugs and edge cases | `conformance/fixtures/regressions.json`, `smoke.json` |
 
-`conformance/stringify-fixtures/` holds 884 hand-built trees with options, captured from the
+`conformance/stringify-fixtures/` holds 885 hand-built trees with options, captured from the
 upstream `toMarkdown` tests. Candidate suites not yet extracted are in `docs/test-suites.md`.
 
 ### Adding fixtures
