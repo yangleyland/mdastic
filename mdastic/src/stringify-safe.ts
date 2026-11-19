@@ -451,16 +451,13 @@ export function safe(
       const slice = value.slice(start, position)
       result += percentEncode ? slice : escapeBackslashes(slice, '\\')
     }
-    start = position
+    start = position + 1
     const code = value.charCodeAt(position)
-    if (percentEncode) {
+    if (percentEncode)
       result += '%' + code.toString(16).toUpperCase().padStart(PERCENT_WIDTH, '0')
-      start++
-    } else if (punctuation(code) && !config.encode?.includes(value[position])) result += '\\'
-    else {
-      result += '&#x' + code.toString(16).toUpperCase() + ';'
-      start++
-    }
+    else if (punctuation(code) && !config.encode?.includes(value[position]))
+      result += '\\' + value[position]
+    else result += '&#x' + code.toString(16).toUpperCase() + ';'
   }
   const rest = value.slice(start, end)
   return result + (percentEncode ? rest : escapeBackslashes(rest, suffix))

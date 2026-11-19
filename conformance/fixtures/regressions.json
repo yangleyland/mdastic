@@ -2577,5 +2577,7 @@
   {"name": "stringify: touching strong switches markers so both form", "input": "**a**__b__", "syntax": []},
   {"name": "stringify: strong around emphasis keeps one marker when it forms", "input": "***a***", "syntax": []},
   {"name": "stringify: a paren after a footnote call in a link label is escaped", "input": "[x[^a](/u)](/z)\n\n[^a]: f", "syntax": ["gfm"]},
-  {"name": "stringify: an empty resource after a footnote call in a link label is escaped", "input": "[[^a]()]()\n\n[^a]: f", "syntax": ["gfm"]}
+  {"name": "stringify: an empty resource after a footnote call in a link label is escaped", "input": "[[^a]()]()\n\n[^a]: f", "syntax": ["gfm"]},
+  {"name": "stringify: an encoded line feed after a backslash at the end of a paragraph is not escaped twice", "input": "\\\\&#10;", "syntax": []},
+  {"name": "stringify: an encoded line feed after text and a backslash is not escaped twice", "input": "a\\\\&#10;", "syntax": []}
 ]

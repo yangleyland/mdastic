@@ -1298,9 +1298,15 @@ function encode(tokens: Token[], start: boolean) {
   const code = character.codePointAt(0)
   if (code === undefined) return
   const reference = encodeCharacterReference(code)
-  token.value = start
-    ? reference + token.value.slice(character.length)
-    : token.value.slice(0, token.value.length - character.length) + reference
+  if (start) {
+    token.value = reference + token.value.slice(character.length)
+  } else {
+    let value = token.value.slice(0, token.value.length - character.length)
+    let escapes = 0
+    while (value.charCodeAt(value.length - 1 - escapes) === Char.Backslash) escapes++
+    if (escapes % 2) value += '\\'
+    token.value = value + reference
+  }
 }
 function improve(
   items: Item[],
