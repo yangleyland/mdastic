@@ -26,6 +26,8 @@ import {
   patternInScope,
   prepareRules,
   compilePattern,
+  classifyCharacter,
+  CharacterKind,
   type Unsafe,
   type SafeConfig,
   type RuleTable,
@@ -38,10 +40,6 @@ import { Char, TAB_SIZE } from './scan.ts'
 const MIN_FENCE_LENGTH = 3
 const MAX_HEADING_DEPTH = 6
 const MIN_THEMATIC_MARKERS = 3
-const enum CharacterKind {
-  Whitespace = 1,
-  Punctuation = 2,
-}
 const enum Surrogate {
   HighStart = 0xd800,
   HighEnd = 0xdbff,
@@ -331,25 +329,6 @@ function encodeCharacterReference(code: number) {
 function encodeCodePoint(character: string) {
   const code = character.codePointAt(0)
   return code === undefined ? '' : encodeCharacterReference(code)
-}
-function markdownLineEndingOrSpace(code: number) {
-  return code < 0 || code === Char.Space
-}
-const unicodePunctuation = regexCheck(/\p{P}|\p{S}/u)
-const unicodeWhitespace = regexCheck(/\s/)
-function regexCheck(regex: RegExp) {
-  return check
-  function check(code: number) {
-    return code > -1 && regex.test(String.fromCharCode(code))
-  }
-}
-function classifyCharacter(code: number) {
-  if (markdownLineEndingOrSpace(code) || unicodeWhitespace(code)) {
-    return CharacterKind.Whitespace
-  }
-  if (unicodePunctuation(code)) {
-    return CharacterKind.Punctuation
-  }
 }
 function encodeInfo(outside: number, inside: number, marker: string) {
   // Encode boundary letters/whitespace only as needed for attention flanking.

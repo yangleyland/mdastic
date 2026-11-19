@@ -2562,5 +2562,8 @@
   {"name": "stringify: image references in table cells keep the cell pipe escape", "input": "| a |\n| - |\n| ![x][a\\|b] |\n\n[a\\|b]: c", "syntax": ["gfm"]},
   {"name": "stringify: an astral character before strong is encoded whole", "input": "&#x1F600;**.**", "syntax": []},
   {"name": "stringify: an astral character after emphasis is encoded whole", "input": "*a.*&#x1F600;", "syntax": []},
-  {"name": "stringify: an astral character before emphasis in a paragraph is encoded whole", "input": "&#x1F600;*<b>*", "syntax": []}
+  {"name": "stringify: an astral character before emphasis in a paragraph is encoded whole", "input": "&#x1F600;*<b>*", "syntax": []},
+  {"name": "stringify: intraword underscores and underscore runs stay unescaped", "input": "snake_case and x86__64", "syntax": []},
+  {"name": "stringify: a trailing underscore is still escaped after an intraword one", "input": "a_b_", "syntax": []},
+  {"name": "stringify: underscores next to a character beside an attention marker stay escaped", "input": "**a_b**", "syntax": []}
 ]

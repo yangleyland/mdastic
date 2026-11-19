@@ -1,7 +1,7 @@
 // Compile unsafe syntax patterns into cached, scope-specific escape rules.
 // Built-ins scan candidates; custom patterns retain regex matching semantics.
 import type { Config } from './syntax.ts'
-import { ASCII_SIZE, Char } from './scan.ts'
+import { ASCII_SIZE, AsciiFlag, Char, ascii } from './scan.ts'
 
 const enum SyntaxMask {
   Gfm = 1,
@@ -18,6 +18,10 @@ const enum EscapeFlag {
 }
 const HEX_ESCAPE_WIDTH = 4
 const PERCENT_WIDTH = 2
+export const enum CharacterKind {
+  Whitespace = 1,
+  Punctuation = 2,
+}
 
 export interface Unsafe {
   character: string
@@ -259,6 +263,28 @@ function escapeBackslashes(value: string, after = ''): string {
   return result + value.slice(start)
 }
 
+const unicodePunctuation = /\p{P}|\p{S}/u
+const unicodeWhitespace = /\s/
+
+export function classifyCharacter(code: number): CharacterKind | undefined {
+  if (code < ASCII_SIZE) {
+    const flags = ascii[code]
+    return flags & AsciiFlag.Whitespace
+      ? CharacterKind.Whitespace
+      : flags & AsciiFlag.Punctuation
+        ? CharacterKind.Punctuation
+        : undefined
+  }
+  if (code !== code) return undefined
+  const character = String.fromCharCode(code)
+  if (unicodeWhitespace.test(character)) return CharacterKind.Whitespace
+  if (unicodePunctuation.test(character)) return CharacterKind.Punctuation
+}
+
+function attentionMarker(code: number) {
+  return code === Char.Asterisk || code === Char.Underscore
+}
+
 export function safe(
   state: {
     rules: RuleTable
@@ -346,11 +372,34 @@ export function safe(
     }
   }
   // ── Suppress redundant adjacent conditional escapes and emit the result ──
-  let start = prefix.length
+  const offset = prefix.length
   const end = value.length - suffix.length
+  let start = offset
   let result = ''
-  for (const position of positions) {
+  for (let index = 0; index < positions.length; index++) {
+    const position = positions[index]
     if (position < start || position >= end) continue
+    if (
+      value.charCodeAt(position) === Char.Underscore &&
+      position > 0 &&
+      classifyCharacter(value.charCodeAt(position - 1)) === undefined &&
+      !matches[position - 1] &&
+      !(position - 1 === offset && attentionMarker(value.charCodeAt(offset - 1)))
+    ) {
+      let sequenceEnd = position + 1
+      while (sequenceEnd < end && value.charCodeAt(sequenceEnd) === Char.Underscore) sequenceEnd++
+      const skip = sequenceEnd - position - 1
+      if (
+        positions[index + skip] === sequenceEnd - 1 &&
+        sequenceEnd < value.length &&
+        classifyCharacter(value.charCodeAt(sequenceEnd)) === undefined &&
+        !matches[sequenceEnd] &&
+        !(sequenceEnd === end - 1 && attentionMarker(value.charCodeAt(end)))
+      ) {
+        index += skip
+        continue
+      }
+    }
     const flags = matches[position]
     if (
       (position + 1 < end &&
