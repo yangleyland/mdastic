@@ -1001,23 +1001,50 @@ function joinDefaults(left: any, right: any, parent: any, state: State) {
     return false
   }
   if (typeof parent.spread === 'boolean') {
-    if (
-      left.type === 'paragraph' &&
-      (left.type === right.type ||
-        right.type === 'definition' ||
-        (right.type === 'heading' && formatHeadingAsSetext(right, state)))
-    ) {
-      return
-    }
+    if (parent.spread) return 1
     if (left.type === 'html') {
       const kind = htmlKind(left.value)
       if (kind === undefined || kind === HtmlKind.Basic || kind === HtmlKind.Complete) return 1
     }
-    if (left.type === 'paragraph' && right.type === 'html') {
+    if (left.type === 'blockquote' && right.type === 'blockquote') return 1
+    if (
+      (left.type === 'definition' || left.type === 'paragraph') &&
+      right.type === 'list' &&
+      ((right.ordered && typeof right.start === 'number' && right.start !== 1) ||
+        (right.children.length > 0 && right.children[0].children.length === 0))
+    ) {
+      return 1
+    }
+    if (
+      left.type === 'paragraph' &&
+      right.type === 'thematicBreak' &&
+      checkRule(state) === '-' &&
+      !state.options.ruleSpaces
+    ) {
+      return 1
+    }
+    let tail = left
+    while (
+      (tail.type === 'blockquote' || tail.type === 'list' || tail.type === 'listItem') &&
+      tail.children.length > 0
+    ) {
+      tail = tail.children[tail.children.length - 1]
+    }
+    if (tail.type !== 'definition' && tail.type !== 'paragraph') return 0
+    if (right.type === 'code' && formatCodeAsIndented(right, state)) return 1
+    if (right.type === 'html') {
       const kind = htmlKind(right.value)
       if (kind === undefined || kind === HtmlKind.Complete) return 1
     }
-    return parent.spread ? 1 : 0
+    if (
+      (left.type === 'paragraph' || left !== tail) &&
+      (right.type === 'definition' ||
+        (right.type === 'heading' && formatHeadingAsSetext(right, state)) ||
+        right.type === 'paragraph')
+    ) {
+      return 1
+    }
+    return 0
   }
 }
 const fullPhrasingSpans: string[] = [

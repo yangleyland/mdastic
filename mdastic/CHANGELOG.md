@@ -19,6 +19,7 @@
 8. **An escape is no longer dropped after unsafe characters before the value.** A character with a `before` condition at the start of a value was left unescaped when the character before it (outside the value) was itself unsafe, as in `[x[^a]\(/u)](/z)` with a defined footnote. Matches `mdast-util-to-markdown` `9df739f`.
 9. **Backslashes before escapes and references are counted.** An escape emits `\` plus the character, so a backslash before an encoded character is no longer escaped twice (`\\&#xA;`, was `\\\&#xA;`), and a backslash before a character encoded for attention is escaped so it does not escape the `&`. Matches `mdast-util-to-markdown` `8304b43`.
 10. **`&` is escaped in code info and meta, destinations and titles**, where a following `#` or letter would otherwise read as a character reference (`[a]: b\&c`, was `[a]: b&c`). Matches `mdast-util-to-markdown` `62804be`.
+11. **Tight lists keep blank lines where they are needed.** In a tight list item, a blank line now separates two block quotes, a paragraph or definition and a list that could not interrupt it, a paragraph and a `---` rule, and a paragraph or definition (also at the end of a nested container) and indented code, kind 7 HTML, a definition, a setext heading or another paragraph, so the item parses back the same. Matches `mdast-util-to-markdown` `0b2dafe`.
 
 ## 0.5.1
 
