@@ -2575,5 +2575,7 @@
   {"name": "stringify: emphasis in emphasis switches markers so both form", "input": "_*.*_", "syntax": []},
   {"name": "stringify: nested emphasis between punctuation switches markers", "input": "_.*.*._", "syntax": []},
   {"name": "stringify: touching strong switches markers so both form", "input": "**a**__b__", "syntax": []},
-  {"name": "stringify: strong around emphasis keeps one marker when it forms", "input": "***a***", "syntax": []}
+  {"name": "stringify: strong around emphasis keeps one marker when it forms", "input": "***a***", "syntax": []},
+  {"name": "stringify: a paren after a footnote call in a link label is escaped", "input": "[x[^a](/u)](/z)\n\n[^a]: f", "syntax": ["gfm"]},
+  {"name": "stringify: an empty resource after a footnote call in a link label is escaped", "input": "[[^a]()]()\n\n[^a]: f", "syntax": ["gfm"]}
 ]

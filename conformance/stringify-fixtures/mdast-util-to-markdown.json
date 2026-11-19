@@ -372,6 +372,7 @@
 {"name":"escape > should not encode a carriage return + line feed","tree":{"type":"paragraph","children":[{"type":"text","value":"a\r\nb"}]},"options":{},"syntax":[]},
 {"name":"escape > should encode carriage returns + line feeds that would form a blank line","tree":{"type":"paragraph","children":[{"type":"text","value":"a\r\n\r\nb"}]},"options":{},"syntax":[]},
 {"name":"escape > should encode a line ending after a break","tree":{"type":"paragraph","children":[{"type":"break"},{"type":"text","value":"\nb"}]},"options":{},"syntax":[]},
+{"name":"escape > should escape a character w/ a `before` condition after unsafe characters before the value","tree":{"type":"emphasis","children":[{"type":"text","value":"!"}]},"options":{"unsafe":[{"before":".","character":"!"}]},"syntax":[]},
 {"name":"escape > should support `afterNode`","tree":{"type":"paragraph","children":[{"type":"text","value":"!"},{"type":"emphasis","children":[{"type":"text","value":"a"}]}]},"options":{"unsafe":[{"character":"!","afterNode":"emphasis"}]},"syntax":[]},
 {"name":"escape > should support `beforeNode`","tree":{"type":"paragraph","children":[{"type":"emphasis","children":[{"type":"text","value":"a"}]},{"type":"text","value":"!"}]},"options":{"unsafe":[{"character":"!","beforeNode":["emphasis"]}]},"syntax":[]},
 {"name":"escape > should support `unicode`","tree":{"type":"paragraph","children":[{"type":"text","value":":á"}]},"options":{"unsafe":[{"character":":","after":"\\p{L}","unicode":true}]},"syntax":[]},

@@ -442,7 +442,9 @@ export function safe(
       (position + 1 < end &&
         flags & EscapeFlag.After &&
         matches[position + 1] === EscapeFlag.Match) ||
-      (flags & EscapeFlag.Before && position && matches[position - 1] === EscapeFlag.Match)
+      (flags & EscapeFlag.Before &&
+        position - 1 >= offset &&
+        matches[position - 1] === EscapeFlag.Match)
     )
       continue
     if (start !== position) {

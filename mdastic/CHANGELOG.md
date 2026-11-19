@@ -16,6 +16,7 @@
 
    Matches `mdast-util-to-markdown` `388140e`.
 7. **Custom `unsafe` patterns support `beforeNode`, `afterNode` and `unicode`.** `beforeNode` and `afterNode` (a node type or a list of them) only match at the start or end of a text node whose previous or next sibling has that type, and `unicode` compiles the pattern with the `u` flag. Matches `mdast-util-to-markdown` `9039999`.
+8. **An escape is no longer dropped after unsafe characters before the value.** A character with a `before` condition at the start of a value was left unescaped when the character before it (outside the value) was itself unsafe, as in `[x[^a]\(/u)](/z)` with a defined footnote. Matches `mdast-util-to-markdown` `9df739f`.
 
 ## 0.5.1
 
