@@ -2584,5 +2584,7 @@
   {"name": "stringify: ampersands in definition destinations and titles are escaped", "input": "[a]\n\n[a]: b&amp;c 'd&amp;e'", "syntax": []},
   {"name": "stringify: html after a definition that ends a nested list in a tight item gets a blank line", "input": "-   2. [a]: b\n    <x>", "syntax": []},
   {"name": "stringify: a link at the start of a line whose text could form a definition gets an empty title", "input": "x\n[`a]:`](b)", "syntax": []},
-  {"name": "stringify: a link with an empty url whose text could form a definition gets an enclosed url and empty title", "input": "x\n[`a]:`]()", "syntax": []}
+  {"name": "stringify: a link with an empty url whose text could form a definition gets an enclosed url and empty title", "input": "x\n[`a]:`]()", "syntax": []},
+  {"name": "stringify: a dollar before an escaped asterisk stays escaped with math", "input": "\\$\\*", "syntax": ["math"]},
+  {"name": "stringify: a dollar before an escaped bracket stays escaped with math", "input": "a\\$\\[", "syntax": ["math"]}
 ]

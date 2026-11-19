@@ -357,12 +357,12 @@ export function safe(
       expression.lastIndex = 0
       let match: RegExpExecArray | null
       while ((match = expression.exec(subject))) {
-        const before = 'before' in pattern || Boolean(pattern.atBreak)
+        const before = Boolean(pattern.before || pattern.atBreak)
         const position = from + match.index + (before ? match[1].length : 0)
         const flags =
           EscapeFlag.Match |
           (before ? EscapeFlag.Before : 0) |
-          ('after' in pattern ? EscapeFlag.After : 0)
+          (pattern.after ? EscapeFlag.After : 0)
         // Intersect restrictions: an unconditional rule wins over conditional rules.
         matches[position] = matches[position] ? matches[position] & flags : flags
       }
@@ -401,8 +401,8 @@ export function safe(
       next[rule.index] = end
       const match =
         EscapeFlag.Match |
-        ('before' in rule.pattern || rule.pattern.atBreak ? EscapeFlag.Before : 0) |
-        ('after' in rule.pattern ? EscapeFlag.After : 0)
+        (rule.pattern.before || rule.pattern.atBreak ? EscapeFlag.Before : 0) |
+        (rule.pattern.after ? EscapeFlag.After : 0)
       flags = flags ? flags & match : match
     }
     if (flags) {

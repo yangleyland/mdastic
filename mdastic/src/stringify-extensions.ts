@@ -692,7 +692,7 @@ export function mathToMarkdown(single: boolean) {
     unsafe: [
       { character: '\r', inConstruct: 'mathFlowMeta' },
       { character: '\n', inConstruct: 'mathFlowMeta' },
-      // Quirk: `after` stays present when undefined; `safe` checks `'after' in pattern`.
+      // `after: undefined` counts as missing, like an empty `after`.
       { character: '$', after: single ? undefined : '\\$', inConstruct: 'phrasing' },
       { character: '$', inConstruct: 'mathFlowMeta' },
       { atBreak: true, character: '$', after: '\\$' },

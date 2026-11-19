@@ -19,7 +19,7 @@
     "mdast-util-gfm": "3.1.0",
     "mdast-util-math": "3.0.0",
     "mdast-util-mdx": "3.0.0",
-    "mdast-util-to-markdown": "github:syntax-tree/mdast-util-to-markdown#0d6c3a2a90027cbf7d24235737c3bc2a0cf68f2c",
+    "mdast-util-to-markdown": "github:syntax-tree/mdast-util-to-markdown#a8a1a661759beb63ea131b5f32aea039f9b144fd",
     "micromark-extension-frontmatter": "2.0.0",
     "micromark-extension-gfm": "3.0.0",
     "micromark-extension-math": "3.1.0",
