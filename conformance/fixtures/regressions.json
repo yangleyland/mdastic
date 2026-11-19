@@ -2571,5 +2571,9 @@
   {"name": "stringify: a hard break before strong is not encoded", "input": "a\\\n**&#32;x**", "syntax": []},
   {"name": "stringify: a hard break before emphasis is not encoded", "input": "a\\\n*&#32;x*", "syntax": []},
   {"name": "stringify: a line ending before inline html that cannot interrupt a paragraph is kept", "input": "a\n<x>", "syntax": []},
-  {"name": "stringify: a hard break before inline html that cannot interrupt a paragraph is kept", "input": "a  \n<x>", "syntax": []}
+  {"name": "stringify: a hard break before inline html that cannot interrupt a paragraph is kept", "input": "a  \n<x>", "syntax": []},
+  {"name": "stringify: emphasis in emphasis switches markers so both form", "input": "_*.*_", "syntax": []},
+  {"name": "stringify: nested emphasis between punctuation switches markers", "input": "_.*.*._", "syntax": []},
+  {"name": "stringify: touching strong switches markers so both form", "input": "**a**__b__", "syntax": []},
+  {"name": "stringify: strong around emphasis keeps one marker when it forms", "input": "***a***", "syntax": []}
 ]

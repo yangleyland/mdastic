@@ -5,7 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  mdast-util-to-markdown: github:syntax-tree/mdast-util-to-markdown#2397cec790c175907bbf05a1e4d5ed62b94117c9
+  mdast-util-to-markdown: github:syntax-tree/mdast-util-to-markdown#388140e6e572aa70420af4b2e4f9de7bb6fbfdb5
 
 importers:
 
@@ -55,8 +55,8 @@ importers:
         specifier: 3.0.0
         version: 3.0.0
       mdast-util-to-markdown:
-        specifier: github:syntax-tree/mdast-util-to-markdown#2397cec790c175907bbf05a1e4d5ed62b94117c9
-        version: https://codeload.github.com/syntax-tree/mdast-util-to-markdown/tar.gz/2397cec790c175907bbf05a1e4d5ed62b94117c9
+        specifier: github:syntax-tree/mdast-util-to-markdown#388140e6e572aa70420af4b2e4f9de7bb6fbfdb5
+        version: https://codeload.github.com/syntax-tree/mdast-util-to-markdown/tar.gz/388140e6e572aa70420af4b2e4f9de7bb6fbfdb5
       micromark-extension-frontmatter:
         specifier: 2.0.0
         version: 2.0.0
@@ -811,8 +811,8 @@ packages:
   mdast-util-phrasing@4.1.0:
     resolution: {integrity: sha512-TqICwyvJJpBwvGAMZjj4J2n0X8QWp21b9l0o7eXyVJ25YNWYbJDVIyD1bZXE6WtV6RmKJVYmQAKWa0zWOABz2w==}
 
-  mdast-util-to-markdown@https://codeload.github.com/syntax-tree/mdast-util-to-markdown/tar.gz/2397cec790c175907bbf05a1e4d5ed62b94117c9:
-    resolution: {gitHosted: true, integrity: sha512-qEDODYkunPmlKSOf5Ruzcfx7OvwCGi3ZlOHjG2DXWn4NOZRjrVRnwHFbniAM/Ez3lgipWbzwAgyl+9VrAIUKww==, tarball: https://codeload.github.com/syntax-tree/mdast-util-to-markdown/tar.gz/2397cec790c175907bbf05a1e4d5ed62b94117c9}
+  mdast-util-to-markdown@https://codeload.github.com/syntax-tree/mdast-util-to-markdown/tar.gz/388140e6e572aa70420af4b2e4f9de7bb6fbfdb5:
+    resolution: {gitHosted: true, integrity: sha512-bVud+7Cnkt1EnzK0FtHRROpNNa/ThlJNQprphi8iVQjvaN3grsvIgKINJcuh/CiBFHrgQQjIroGWXJ6tLEHC3g==, tarball: https://codeload.github.com/syntax-tree/mdast-util-to-markdown/tar.gz/388140e6e572aa70420af4b2e4f9de7bb6fbfdb5}
     version: 2.1.2
 
   mdast-util-to-string@4.0.0:
@@ -1707,7 +1707,7 @@ snapshots:
       devlop: 1.1.0
       escape-string-regexp: 5.0.0
       mdast-util-from-markdown: 2.0.3
-      mdast-util-to-markdown: https://codeload.github.com/syntax-tree/mdast-util-to-markdown/tar.gz/2397cec790c175907bbf05a1e4d5ed62b94117c9
+      mdast-util-to-markdown: https://codeload.github.com/syntax-tree/mdast-util-to-markdown/tar.gz/388140e6e572aa70420af4b2e4f9de7bb6fbfdb5
       micromark-extension-frontmatter: 2.0.0
     transitivePeerDependencies:
       - supports-color
@@ -1725,7 +1725,7 @@ snapshots:
       '@types/mdast': 4.0.4
       devlop: 1.1.0
       mdast-util-from-markdown: 2.0.3
-      mdast-util-to-markdown: https://codeload.github.com/syntax-tree/mdast-util-to-markdown/tar.gz/2397cec790c175907bbf05a1e4d5ed62b94117c9
+      mdast-util-to-markdown: https://codeload.github.com/syntax-tree/mdast-util-to-markdown/tar.gz/388140e6e572aa70420af4b2e4f9de7bb6fbfdb5
       micromark-util-normalize-identifier: 2.0.1
     transitivePeerDependencies:
       - supports-color
@@ -1734,7 +1734,7 @@ snapshots:
     dependencies:
       '@types/mdast': 4.0.4
       mdast-util-from-markdown: 2.0.3
-      mdast-util-to-markdown: https://codeload.github.com/syntax-tree/mdast-util-to-markdown/tar.gz/2397cec790c175907bbf05a1e4d5ed62b94117c9
+      mdast-util-to-markdown: https://codeload.github.com/syntax-tree/mdast-util-to-markdown/tar.gz/388140e6e572aa70420af4b2e4f9de7bb6fbfdb5
     transitivePeerDependencies:
       - supports-color
 
@@ -1744,7 +1744,7 @@ snapshots:
       devlop: 1.1.0
       markdown-table: 3.0.4
       mdast-util-from-markdown: 2.0.3
-      mdast-util-to-markdown: https://codeload.github.com/syntax-tree/mdast-util-to-markdown/tar.gz/2397cec790c175907bbf05a1e4d5ed62b94117c9
+      mdast-util-to-markdown: https://codeload.github.com/syntax-tree/mdast-util-to-markdown/tar.gz/388140e6e572aa70420af4b2e4f9de7bb6fbfdb5
     transitivePeerDependencies:
       - supports-color
 
@@ -1753,7 +1753,7 @@ snapshots:
       '@types/mdast': 4.0.4
       devlop: 1.1.0
       mdast-util-from-markdown: 2.0.3
-      mdast-util-to-markdown: https://codeload.github.com/syntax-tree/mdast-util-to-markdown/tar.gz/2397cec790c175907bbf05a1e4d5ed62b94117c9
+      mdast-util-to-markdown: https://codeload.github.com/syntax-tree/mdast-util-to-markdown/tar.gz/388140e6e572aa70420af4b2e4f9de7bb6fbfdb5
     transitivePeerDependencies:
       - supports-color
 
@@ -1765,7 +1765,7 @@ snapshots:
       mdast-util-gfm-strikethrough: 2.0.1
       mdast-util-gfm-table: 2.0.0
       mdast-util-gfm-task-list-item: 2.0.0
-      mdast-util-to-markdown: https://codeload.github.com/syntax-tree/mdast-util-to-markdown/tar.gz/2397cec790c175907bbf05a1e4d5ed62b94117c9
+      mdast-util-to-markdown: https://codeload.github.com/syntax-tree/mdast-util-to-markdown/tar.gz/388140e6e572aa70420af4b2e4f9de7bb6fbfdb5
     transitivePeerDependencies:
       - supports-color
 
@@ -1776,7 +1776,7 @@ snapshots:
       devlop: 1.1.0
       longest-streak: 3.1.0
       mdast-util-from-markdown: 2.0.3
-      mdast-util-to-markdown: https://codeload.github.com/syntax-tree/mdast-util-to-markdown/tar.gz/2397cec790c175907bbf05a1e4d5ed62b94117c9
+      mdast-util-to-markdown: https://codeload.github.com/syntax-tree/mdast-util-to-markdown/tar.gz/388140e6e572aa70420af4b2e4f9de7bb6fbfdb5
       unist-util-remove-position: 5.0.0
     transitivePeerDependencies:
       - supports-color
@@ -1788,7 +1788,7 @@ snapshots:
       '@types/mdast': 4.0.4
       devlop: 1.1.0
       mdast-util-from-markdown: 2.0.3
-      mdast-util-to-markdown: https://codeload.github.com/syntax-tree/mdast-util-to-markdown/tar.gz/2397cec790c175907bbf05a1e4d5ed62b94117c9
+      mdast-util-to-markdown: https://codeload.github.com/syntax-tree/mdast-util-to-markdown/tar.gz/388140e6e572aa70420af4b2e4f9de7bb6fbfdb5
     transitivePeerDependencies:
       - supports-color
 
@@ -1801,7 +1801,7 @@ snapshots:
       ccount: 2.0.1
       devlop: 1.1.0
       mdast-util-from-markdown: 2.0.3
-      mdast-util-to-markdown: https://codeload.github.com/syntax-tree/mdast-util-to-markdown/tar.gz/2397cec790c175907bbf05a1e4d5ed62b94117c9
+      mdast-util-to-markdown: https://codeload.github.com/syntax-tree/mdast-util-to-markdown/tar.gz/388140e6e572aa70420af4b2e4f9de7bb6fbfdb5
       parse-entities: 4.0.2
       stringify-entities: 4.0.4
       unist-util-stringify-position: 4.0.0
@@ -1815,7 +1815,7 @@ snapshots:
       mdast-util-mdx-expression: 2.0.1
       mdast-util-mdx-jsx: 3.2.0
       mdast-util-mdxjs-esm: 2.0.1
-      mdast-util-to-markdown: https://codeload.github.com/syntax-tree/mdast-util-to-markdown/tar.gz/2397cec790c175907bbf05a1e4d5ed62b94117c9
+      mdast-util-to-markdown: https://codeload.github.com/syntax-tree/mdast-util-to-markdown/tar.gz/388140e6e572aa70420af4b2e4f9de7bb6fbfdb5
     transitivePeerDependencies:
       - supports-color
 
@@ -1826,7 +1826,7 @@ snapshots:
       '@types/mdast': 4.0.4
       devlop: 1.1.0
       mdast-util-from-markdown: 2.0.3
-      mdast-util-to-markdown: https://codeload.github.com/syntax-tree/mdast-util-to-markdown/tar.gz/2397cec790c175907bbf05a1e4d5ed62b94117c9
+      mdast-util-to-markdown: https://codeload.github.com/syntax-tree/mdast-util-to-markdown/tar.gz/388140e6e572aa70420af4b2e4f9de7bb6fbfdb5
     transitivePeerDependencies:
       - supports-color
 
@@ -1835,7 +1835,7 @@ snapshots:
       '@types/mdast': 4.0.4
       unist-util-is: 6.0.1
 
-  mdast-util-to-markdown@https://codeload.github.com/syntax-tree/mdast-util-to-markdown/tar.gz/2397cec790c175907bbf05a1e4d5ed62b94117c9:
+  mdast-util-to-markdown@https://codeload.github.com/syntax-tree/mdast-util-to-markdown/tar.gz/388140e6e572aa70420af4b2e4f9de7bb6fbfdb5:
     dependencies:
       '@types/mdast': 4.0.4
       '@types/unist': 3.0.3
@@ -2233,7 +2233,7 @@ snapshots:
   remark-stringify@11.0.0:
     dependencies:
       '@types/mdast': 4.0.4
-      mdast-util-to-markdown: https://codeload.github.com/syntax-tree/mdast-util-to-markdown/tar.gz/2397cec790c175907bbf05a1e4d5ed62b94117c9
+      mdast-util-to-markdown: https://codeload.github.com/syntax-tree/mdast-util-to-markdown/tar.gz/388140e6e572aa70420af4b2e4f9de7bb6fbfdb5
       unified: 11.0.5
 
   remark@15.0.1:

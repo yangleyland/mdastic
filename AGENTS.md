@@ -191,8 +191,14 @@ Do not recursively call `parseDocument` from a hook: the arena is reused. Use th
 `stringify.ts` is a behavior port of `mdast-util-to-markdown` at the oracle's pinned commit (switch dispatch, same
 handlers, `join`, `unsafe`, association). `stringify-extensions.ts` ports the gfm, mdx and
 frontmatter handlers. `stringify-safe.ts` compiles the `unsafe` patterns once per config into
-per-scope candidate tables, so `safe()` scans each value once instead of running every regex.
+per-scope candidate tables (cached in a trie keyed by the construct stack), so `safe()` scans each
+value once instead of running every regex.
 
+- **Attention is chosen per phrasing container.** Handlers with an `attention` property (emphasis,
+  strong, gfm `delete`) become items whose sequence is picked later: `render` + `check`
+  (micromark's pairing, rule of 3), then other sequences of the attention involved in the first
+  mistake until every sequence forms its node. Plain phrasing skips this and joins strings.
+  Built-in specs come from `attentionSpec()`, which caches their sequences.
 - Autolinks percent-encode the characters they cannot hold. Autolinks and reference labels drop
   only the `phrasing` scope, so enclosing constructs such as table cells still escape `|`.
 - Intraword `_` runs stay unescaped when every underscore of the run was a candidate and both
@@ -217,7 +223,7 @@ per-scope candidate tables, so `safe()` scans each value once instead of running
 ### The oracle
 
 `conformance/src/oracle.ts` runs the real remark stack, pinned to exact versions in
-`conformance/package.json` (mdast-util-from-markdown 2.0.3, mdast-util-to-markdown at git commit `2397cec`,
+`conformance/package.json` (mdast-util-from-markdown 2.0.3, mdast-util-to-markdown at git commit `388140e`,
 micromark-extension-gfm 3.0.0, -mdxjs 3.0.0, -frontmatter 2.0.0, -math 3.1.0, mdast-util-math 3.0.0,
 micromark-heading-id 2.0.0). Extensions are registered in safe-mdx / holocron order: mdx,
 frontmatter `['yaml', 'toml']`, gfm, math (remark-math defaults), then headingId. A pnpm
@@ -253,7 +259,7 @@ markdown inputs is useful, even suites that only assert HTML.
 | micromark-extension-math, mdast-util-math, remark-math, Sätteri and pulldown-cmark math tests; d2l-en; real documents with `$` | `scripts/extract-math.ts` |
 | hand-written bugs and edge cases | `conformance/fixtures/regressions.json`, `smoke.json` |
 
-`conformance/stringify-fixtures/` holds 841 hand-built trees with options, captured from the
+`conformance/stringify-fixtures/` holds 857 hand-built trees with options, captured from the
 upstream `toMarkdown` tests. Candidate suites not yet extracted are in `docs/test-suites.md`.
 
 ### Adding fixtures

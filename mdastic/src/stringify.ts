@@ -27,6 +27,7 @@ import {
   prepareRules,
   compilePattern,
   classifyCharacter,
+  punctuation,
   CharacterKind,
   type Unsafe,
   type SafeConfig,
@@ -111,7 +112,14 @@ type Tracker = {
 // Handler arguments intentionally match mdast-util-to-markdown's extension API.
 export type Handler = ((node: any, parent: any, state: State, info: Info) => string) & {
   peek?: Handler
+  attention?: Attention
 }
+export interface AttentionSpec {
+  construct: string
+  markers: string[]
+  sizes: number[]
+}
+export type Attention = (node: any, state: State) => AttentionSpec
 export type Join = (left: any, right: any, parent: any, state: State) => number | boolean | void
 export interface State {
   associationId(node: { identifier?: string; label?: string | null }): string
@@ -137,7 +145,6 @@ export interface State {
   scopedRules?: ScopedRules
   bulletCurrent?: string
   bulletLastUsed?: string
-  attentionEncodeSurroundingInfo?: { before: boolean; after: boolean }
 }
 type Setup = Pick<State, 'handlers' | 'join' | 'options' | 'unsafe'>
 function configure(base: Setup, extension: StringifyOptions): Setup {
@@ -339,10 +346,6 @@ function checkEmphasis(state: State) {
 function encodeCharacterReference(code: number) {
   return '&#x' + code.toString(16).toUpperCase() + ';'
 }
-function encodeCodePoint(character: string) {
-  const code = character.codePointAt(0)
-  return code === undefined ? '' : encodeCharacterReference(code)
-}
 function encodeInfo(outside: number, inside: number, marker: string) {
   // Encode boundary letters/whitespace only as needed for attention flanking.
   const outsideKind = classifyCharacter(outside)
@@ -369,44 +372,19 @@ function encodeInfo(outside: number, inside: number, marker: string) {
       ? { inside: true, outside: false }
       : { inside: false, outside: false }
 }
+const knownSequences = new Map<AttentionSpec, string[]>()
+emphasis.attention = emphasisAttention
 emphasis.peek = emphasisPeek
 function emphasis(node: M.Emphasis, _: any, state: State, info: Info) {
-  const marker = checkEmphasis(state)
-  const exit = state.enter('emphasis')
-  const tracker = state.createTracker(info)
-  const before = tracker.move(marker)
-  let content = tracker.move(
-    state.containerPhrasing(node, {
-      after: marker,
-      before,
-      ...tracker.current(),
-    }),
-  )
-  const betweenHead = firstCharacter(content)
-  const open = encodeInfo(
-    info.before.charCodeAt(info.before.length - 1),
-    betweenHead.charCodeAt(0),
-    marker,
-  )
-  if (open.inside && betweenHead) {
-    content = encodeCodePoint(betweenHead) + content.slice(betweenHead.length)
-  }
-  const betweenTail = lastCharacter(content)
-  const close = encodeInfo(
-    info.after.charCodeAt(0),
-    betweenTail.charCodeAt(betweenTail.length - 1),
-    marker,
-  )
-  if (close.inside && betweenTail) {
-    content = content.slice(0, content.length - betweenTail.length) + encodeCodePoint(betweenTail)
-  }
-  const after = tracker.move(marker)
+  const exit = state.enter('phrasing')
+  const value = state.containerPhrasing({ type: 'root', children: [node] }, info)
   exit()
-  state.attentionEncodeSurroundingInfo = {
-    after: close.outside,
-    before: open.outside,
-  }
-  return before + content + after
+  return value
+}
+const emphasisAsterisk = attentionSpec('emphasis', ['*', '_'], [1])
+const emphasisUnderscore = attentionSpec('emphasis', ['_', '*'], [1])
+function emphasisAttention(_: any, state: State) {
+  return checkEmphasis(state) === '*' ? emphasisAsterisk : emphasisUnderscore
 }
 function emphasisPeek(_: any, _1: any, state: State) {
   return state.options.emphasis || '*'
@@ -904,17 +882,22 @@ const phrasingTypes = new Set([
   'image',
   'imageReference',
   'inlineCode',
+  'inlineMath',
   'link',
   'linkReference',
-  'strong',
-  'text',
   'mdxJsxTextElement',
   'mdxTextExpression',
+  'strong',
+  'text',
+  'textDirective',
 ])
 function root(node: M.Root, _: any, state: State, info: Info) {
   const hasPhrasing = node.children.some((node) => phrasingTypes.has(node.type))
-  const container = hasPhrasing ? state.containerPhrasing : state.containerFlow
-  return container.call(state, node, info)
+  if (!hasPhrasing) return state.containerFlow(node, info)
+  const exit = state.enter('phrasing')
+  const value = state.containerPhrasing(node, info)
+  exit()
+  return value
 }
 function checkStrong(state: State) {
   const marker = state.options.strong || '*'
@@ -927,44 +910,18 @@ function checkStrong(state: State) {
   }
   return marker
 }
+strong.attention = strongAttention
 strong.peek = strongPeek
 function strong(node: M.Strong, _: any, state: State, info: Info) {
-  const marker = checkStrong(state)
-  const exit = state.enter('strong')
-  const tracker = state.createTracker(info)
-  const before = tracker.move(marker + marker)
-  let content = tracker.move(
-    state.containerPhrasing(node, {
-      after: marker,
-      before,
-      ...tracker.current(),
-    }),
-  )
-  const betweenHead = firstCharacter(content)
-  const open = encodeInfo(
-    info.before.charCodeAt(info.before.length - 1),
-    betweenHead.charCodeAt(0),
-    marker,
-  )
-  if (open.inside && betweenHead) {
-    content = encodeCodePoint(betweenHead) + content.slice(betweenHead.length)
-  }
-  const betweenTail = lastCharacter(content)
-  const close = encodeInfo(
-    info.after.charCodeAt(0),
-    betweenTail.charCodeAt(betweenTail.length - 1),
-    marker,
-  )
-  if (close.inside && betweenTail) {
-    content = content.slice(0, content.length - betweenTail.length) + encodeCodePoint(betweenTail)
-  }
-  const after = tracker.move(marker + marker)
+  const exit = state.enter('phrasing')
+  const value = state.containerPhrasing({ type: 'root', children: [node] }, info)
   exit()
-  state.attentionEncodeSurroundingInfo = {
-    after: close.outside,
-    before: open.outside,
-  }
-  return before + content + after
+  return value
+}
+const strongAsterisk = attentionSpec('strong', ['*', '_'], [2])
+const strongUnderscore = attentionSpec('strong', ['_', '*'], [2])
+function strongAttention(_: any, state: State) {
+  return checkStrong(state) === '*' ? strongAsterisk : strongUnderscore
 }
 function strongPeek(_: any, _1: any, state: State) {
   return state.options.strong || '*'
@@ -1208,6 +1165,37 @@ function association(node: { label?: string | null; identifier?: string }) {
   }
   return decodeString(node.identifier)
 }
+const strictMarkers = new Map([
+  ['*', false],
+  ['_', true],
+])
+interface AttentionResult {
+  children: Item[]
+  sequences: string[]
+}
+type Item = AttentionResult | string
+interface Token {
+  value: string
+  attention: AttentionResult | undefined
+}
+interface Run {
+  tokens: Token[]
+  markers: Token[]
+  start: number
+  end: number
+  open: boolean
+  close: boolean
+  split: boolean
+}
+interface Mistake {
+  attention: AttentionResult[]
+  index: number
+}
+interface Improvement {
+  chosen: Map<AttentionResult, string>
+  tokens: Token[]
+  mistake: Mistake | undefined
+}
 function highSurrogate(code: number) {
   return code >= Surrogate.HighStart && code <= Surrogate.HighEnd
 }
@@ -1225,14 +1213,210 @@ function lastCharacter(value: string) {
     ? value.slice(-2)
     : value.slice(-1)
 }
+function candidates(tokens: Token[], involved: Token[], runOf: Map<Token, Run>) {
+  const related = new Set<AttentionResult | undefined>()
+  for (const token of tokens) {
+    const siblings = runOf.get(token)
+    if (siblings && token.attention && involved.some((d) => d.attention === token.attention)) {
+      for (const sibling of siblings.tokens) related.add(sibling.attention)
+    }
+  }
+  const ordered: AttentionResult[] = []
+  for (const token of tokens) {
+    if (token.attention && related.delete(token.attention)) ordered.push(token.attention)
+  }
+  ordered.reverse()
+  return ordered
+}
+function check(tokens: Token[], before: string, after: string): Mistake | undefined {
+  const runs: Run[] = []
+  const wrong = new Map<Token, Token[]>()
+  const runOf = new Map<Token, Run>()
+  let index = 0
+  while (index < tokens.length) {
+    if (!tokens[index].attention) {
+      index++
+      continue
+    }
+    const marker = tokens[index].value.charAt(0)
+    const strict = strictMarkers.get(marker)
+    let end = index + 1
+    while (
+      end < tokens.length &&
+      tokens[end].attention &&
+      tokens[end].value.charAt(0) === marker
+    ) {
+      end++
+    }
+    const head = index ? tokens[index - 1].value : before
+    const previous = classifyCharacter(head.charCodeAt(head.length - 1))
+    const next = classifyCharacter((end < tokens.length ? tokens[end].value : after).charCodeAt(0))
+    const open = !next || (next === CharacterKind.Punctuation && Boolean(previous))
+    const close = !previous || (previous === CharacterKind.Punctuation && Boolean(next))
+    const run: Run = {
+      tokens: tokens.slice(index, end),
+      markers: [],
+      start: 0,
+      end: 0,
+      open: strict ? open && (Boolean(previous) || !close) : open,
+      close: strict ? close && (Boolean(next) || !open) : close,
+      split: strict !== undefined,
+    }
+    for (const token of run.tokens) {
+      wrong.set(token, [...run.tokens])
+      runOf.set(token, run)
+      let size = token.value.length
+      while (size--) run.markers.push(token)
+    }
+    run.end = run.markers.length
+    runs.push(run)
+    index = end
+  }
+  pair(runs, wrong)
+  index = -1
+  while (++index < tokens.length) {
+    const involved = wrong.get(tokens[index])
+    if (involved) return { attention: candidates(tokens, involved, runOf), index }
+  }
+}
 function containerPhrasing(parent: any, state: State, info: Info) {
-  // ── Peek neighbors, serialize each child, then repair attention boundaries ──
+  return serializeItems(phrasingItems(parent, state, info), info.before, info.after)
+}
+function encode(tokens: Token[], start: boolean) {
+  const token = tokens[start ? 0 : tokens.length - 1]
+  if (!token || token.attention) return
+  const character = start ? firstCharacter(token.value) : lastCharacter(token.value)
+  const code = character.codePointAt(0)
+  if (code === undefined) return
+  const reference = encodeCharacterReference(code)
+  token.value = start
+    ? reference + token.value.slice(character.length)
+    : token.value.slice(0, token.value.length - character.length) + reference
+}
+function improve(
+  items: Item[],
+  chosen: Map<AttentionResult, string>,
+  mistake: Mistake,
+  before: string,
+  after: string,
+): Improvement | undefined {
+  for (const attention of mistake.attention) {
+    const current = chosen.get(attention) || attention.sequences[0]
+    for (const sequence of attention.sequences) {
+      if (sequence === current) continue
+      const trial = new Map(chosen)
+      trial.set(attention, sequence)
+      const tokens = render(items, trial, before, after)
+      const next = check(tokens, before, after)
+      if (!next || next.index > mistake.index) return { chosen: trial, mistake: next, tokens }
+    }
+  }
+}
+function pair(runs: Run[], wrong: Map<Token, Token[]>) {
+  let index = 0
+  while (index < runs.length) {
+    const closer = runs[index]
+    const marker = closer.tokens[0].value.charAt(0)
+    const closerSize = closer.end - closer.start
+    let open = closer.close && closerSize ? index : 0
+    while (open--) {
+      const opener = runs[open]
+      const openerSize = opener.end - opener.start
+      if (
+        opener.tokens[0].value.charAt(0) === marker &&
+        opener.open &&
+        openerSize &&
+        (closer.split
+          ? !((opener.close || closer.open) && closerSize % 3) || (openerSize + closerSize) % 3
+          : openerSize === opener.markers.length && openerSize === closerSize)
+      ) {
+        const size = closer.split ? (openerSize > 1 && closerSize > 1 ? 2 : 1) : closerSize
+        const opening = opener.markers.slice(opener.end - size, opener.end)
+        const closing = closer.markers.slice(closer.start, closer.start + size)
+        const openToken = opening[0]
+        const closeToken = closing[0]
+        if (
+          openToken === opening[size - 1] &&
+          openToken.value.length === size &&
+          closeToken === closing[size - 1] &&
+          closeToken.value.length === size &&
+          openToken.attention === closeToken.attention
+        ) {
+          wrong.delete(openToken)
+          wrong.delete(closeToken)
+        } else {
+          const involved = [...new Set([...opening, ...closing])]
+          for (const token of involved) {
+            const list = wrong.get(token)
+            if (list) list.push(...involved)
+          }
+        }
+        opener.end -= size
+        closer.start += size
+        break
+      }
+    }
+    if (open === -1 || closer.start === closer.end) index++
+  }
+}
+export function attentionSpec(construct: string, markers: string[], sizes: number[]) {
+  const spec: AttentionSpec = { construct, markers, sizes }
+  knownSequences.set(spec, attentionSequences(construct, markers, sizes))
+  return spec
+}
+function attentionSequences(type: string, markers: string[], sizes: number[]) {
+  if (markers.length === 0) {
+    throw new Error(
+      'Cannot serialize `' + type + '` as attention without markers, expected one or more markers',
+    )
+  }
+  if (sizes.length === 0) {
+    throw new Error(
+      'Cannot serialize `' + type + '` as attention without sizes, expected one or more sizes',
+    )
+  }
+  for (const size of sizes) {
+    if (!Number.isSafeInteger(size) || size < 1) {
+      throw new Error(
+        'Cannot serialize `' +
+          type +
+          '` as attention with `' +
+          size +
+          '` as size, expected positive integer',
+      )
+    }
+  }
+  const sequences: string[] = []
+  for (const marker of markers) {
+    if (marker.length !== 1) {
+      throw new Error(
+        'Cannot serialize `' +
+          type +
+          '` as attention with `' +
+          marker +
+          '` as marker, expected a single ascii character',
+      )
+    }
+    if (!punctuation(marker.charCodeAt(0))) {
+      throw new Error(
+        'Cannot serialize `' +
+          type +
+          '` as attention with `' +
+          marker +
+          '` as marker, expected ascii punctuation',
+      )
+    }
+    for (const size of sizes) sequences.push(marker.repeat(size))
+  }
+  return sequences
+}
+function phrasingItems(parent: any, state: State, info: Info): Item[] {
+  // ── Peek neighbors, serialize each child, keep attention open to choose sequences later ──
   const indexStack = state.indexStack
   const children = parent.children || []
-  const results: string[] = []
+  const results: Item[] = []
   let index = -1
   let before = info.before
-  let encodeAfter: string | undefined
   indexStack.push(-1)
   let tracker = state.createTracker(info)
   const childInfo: Info = { before: '', after: '', now: info.now, lineShift: info.lineShift }
@@ -1257,53 +1441,48 @@ function containerPhrasing(parent: any, state: State, info: Info) {
     } else {
       after = info.after
     }
-    // A newline before inline HTML would reparse as flow HTML; replace it with a space.
-    if (
-      results.length > 0 &&
-      (before === '\r' || before === '\n') &&
-      child.type === 'html' &&
-      htmlKind(child.value) !== HtmlKind.Complete
-    ) {
-      results[results.length - 1] = results[results.length - 1].replace(/(\r?\n|\r)$/, ' ')
-      before = ' '
-      tracker = state.createTracker(info)
-      tracker.move(results.join(''))
-    }
-    const current = tracker.current()
-    childInfo.now = current.now
-    childInfo.lineShift = current.lineShift
-    childInfo.before = before
-    childInfo.after = after
-    let value =
-      child.type === 'text' && !state.customHandlers
-        ? safe(state, child.value, childInfo)
-        : state.handle(
-            child,
-            parent,
-            state,
-            state.customHandlers ? { ...childInfo } : childInfo,
-          )
-    if (encodeAfter && encodeAfter === firstCharacter(value)) {
-      value = encodeCodePoint(encodeAfter) + value.slice(encodeAfter.length)
-    }
-    // Attention handlers may request encoding on the preceding or following sibling.
-    const encodingInfo = state.attentionEncodeSurroundingInfo
-    state.attentionEncodeSurroundingInfo = void 0
-    encodeAfter = void 0
-    if (encodingInfo) {
+    let value: string
+    if (child.type === 'text' && !state.customHandlers) {
+      const current = tracker.current()
+      childInfo.now = current.now
+      childInfo.lineShift = current.lineShift
+      childInfo.before = before
+      childInfo.after = after
+      value = state.rules.custom
+        ? text(child, parent, state, childInfo)
+        : safe(state, child.value, childInfo)
+    } else {
+      // A newline before inline HTML would reparse as flow HTML; replace it with a space.
       const previous = results[results.length - 1]
       if (
-        previous !== undefined &&
-        encodingInfo.before &&
-        before !== '\n' &&
-        before !== '\r' &&
-        before === lastCharacter(previous)
+        child.type === 'html' &&
+        typeof previous === 'string' &&
+        (before === '\r' || before === '\n') &&
+        htmlKind(child.value) !== HtmlKind.Complete
       ) {
-
-        results[results.length - 1] =
-          previous.slice(0, previous.length - before.length) + encodeCodePoint(before)
+        results[results.length - 1] = previous.replace(/(\r?\n|\r)$/, ' ')
+        before = ' '
+        tracker = state.createTracker(info)
+        if (tracker !== untracked) tracker.move(serializeItems(results, info.before, info.after))
       }
-      if (encodingInfo.after) encodeAfter = after
+      const handler = state.handle.handlers[child.type]
+      if (handler && handler.attention) {
+        const item = attentionItem(child, handler.attention, state, tracker)
+        results.push(item)
+        before = lastCharacter(item.sequences[0])
+        continue
+      }
+      const current = tracker.current()
+      childInfo.now = current.now
+      childInfo.lineShift = current.lineShift
+      childInfo.before = before
+      childInfo.after = after
+      value = state.handle(
+        child,
+        parent,
+        state,
+        state.customHandlers ? { ...childInfo } : childInfo,
+      )
     }
     if (!value) continue
     tracker.move(value)
@@ -1311,7 +1490,106 @@ function containerPhrasing(parent: any, state: State, info: Info) {
     before = lastCharacter(value)
   }
   indexStack.pop()
-  return results.join('')
+  return results
+}
+function attentionItem(
+  node: any,
+  attention: Attention,
+  state: State,
+  tracker: Tracker,
+): AttentionResult {
+  const spec = attention(node, state)
+  const sequences =
+    knownSequences.get(spec) || attentionSequences(node.type, spec.markers, spec.sizes)
+  const sequence = sequences[0]
+  const exit = state.enter(spec.construct)
+  const inside = state.createTracker(tracker.current())
+  inside.move(sequence)
+  const current = inside.current()
+  const children = phrasingItems(node, state, {
+    before: sequence,
+    after: sequence,
+    now: current.now,
+    lineShift: current.lineShift,
+  })
+  exit()
+  if (tracker !== untracked) {
+    tracker.move(sequence)
+    tracker.move(serializeItems(children, sequence, sequence))
+    tracker.move(sequence)
+  }
+  return { children, sequences }
+}
+function render(
+  items: Item[],
+  chosen: Map<AttentionResult, string>,
+  before: string,
+  after: string,
+): Token[] {
+  const tokens: Token[] = []
+  let encodeAfter: string | undefined
+  let previous = lastCharacter(before)
+  let index = -1
+  while (++index < items.length) {
+    const item = items[index]
+    if (typeof item === 'string') {
+      const token: Token = { value: item, attention: undefined }
+      if (encodeAfter && encodeAfter === firstCharacter(item)) encode([token], true)
+      encodeAfter = undefined
+      tokens.push(token)
+      if (token.value) previous = lastCharacter(token.value)
+      continue
+    }
+    const sequence = chosen.get(item) || item.sequences[0]
+    const marker = sequence.charAt(0)
+    const next = items[index + 1]
+    const outsideBefore = previous
+    const outsideAfter = firstCharacter(
+      next === undefined
+        ? after
+        : typeof next === 'string'
+          ? next
+          : chosen.get(next) || next.sequences[0],
+    )
+    const inside = render(item.children, chosen, sequence, sequence)
+    const head = inside.length > 0 ? inside[0].value : ''
+    const open = encodeInfo(
+      outsideBefore.charCodeAt(outsideBefore.length - 1),
+      head.charCodeAt(0),
+      marker,
+    )
+    if (open.inside) encode(inside, true)
+    const tail = inside.length > 0 ? lastCharacter(inside[inside.length - 1].value) : ''
+    const close = encodeInfo(outsideAfter.charCodeAt(0), tail.charCodeAt(tail.length - 1), marker)
+    if (close.inside) encode(inside, false)
+    if (open.outside && outsideBefore !== '\n' && outsideBefore !== '\r') encode(tokens, false)
+    if (close.outside) encodeAfter = outsideAfter
+    tokens.push({ value: sequence, attention: item }, ...inside, { value: sequence, attention: item })
+    previous = sequence.charAt(sequence.length - 1)
+  }
+  return tokens
+}
+function serializeItems(items: Item[], before: string, after: string): string {
+  let index = -1
+  while (++index < items.length) if (typeof items[index] !== 'string') break
+  if (index === items.length) return items.join('')
+  let chosen = new Map<AttentionResult, string>()
+  const initial = render(items, chosen, before, after)
+  let tokens = initial
+  let mistake = check(tokens, before, after)
+  while (mistake) {
+    const next = improve(items, chosen, mistake, before, after)
+    if (!next) {
+      tokens = initial
+      break
+    }
+    chosen = next.chosen
+    tokens = next.tokens
+    mistake = next.mistake
+  }
+  let result = ''
+  for (const token of tokens) result += token.value
+  return result
 }
 const htmlRawNames = new Set(['pre', 'script', 'style', 'textarea'])
 function htmlKind(value: string): HtmlKind | undefined {
@@ -1492,12 +1770,12 @@ function stringifyTree(
   if (state.options.tightDefinitions) {
     state.join.push(joinDefinition)
   }
-  let result = state.handle(tree, void 0, state, {
-    before: '\n',
-    after: '\n',
-    now: { line: 1, column: 1 },
-    lineShift: 0,
-  })
+  let result = state.handle(
+    phrasingTypes.has(tree.type) ? { type: 'root', children: [tree] } : tree,
+    void 0,
+    state,
+    { before: '\n', after: '\n', now: { line: 1, column: 1 }, lineShift: 0 },
+  )
   if (
     result &&
     result.charCodeAt(result.length - 1) !== 10 &&

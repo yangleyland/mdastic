@@ -57,9 +57,13 @@ export interface ScopedRules {
   expression: RegExp
   percentEncode: boolean
 }
+interface ScopeNode {
+  next: Map<string, ScopeNode>
+  rules?: ScopedRules
+}
 export interface RuleTable {
   characters: (Rule[] | undefined)[]
-  scopes: Map<string, ScopedRules>
+  scopes: ScopeNode
   breaks: RegExp[]
   next: Int32Array
   custom?: { pattern: Unsafe; expression: RegExp }[]
@@ -115,7 +119,7 @@ export function prepareRules(config: Config, patterns: Unsafe[], custom = false)
     table = {
       characters: [],
       next: new Int32Array(patterns.length),
-      scopes: new Map(),
+      scopes: { next: new Map() },
       breaks: patterns.filter((pattern) => pattern.atBreak).map(compilePattern),
     }
     // Syntax-equivalent built-ins share tables; user patterns must bypass that cache.
@@ -164,9 +168,17 @@ export function compilePattern(pattern: Unsafe): RegExp {
 }
 
 function scopedRules(table: RuleTable, stack: string[]): ScopedRules {
-  const key = stack.join('/')
+  let node = table.scopes
+  for (const name of stack) {
+    let child = node.next.get(name)
+    if (!child) {
+      child = { next: new Map() }
+      node.next.set(name, child)
+    }
+    node = child
+  }
   // Construct scope determines which unsafe candidates the native regex can skip to.
-  let result = table.scopes.get(key)
+  let result = node.rules
   if (!result) {
     const characters = table.characters.map((rules) =>
       rules?.filter((rule) => patternInScope(stack, rule.pattern)),
@@ -199,7 +211,7 @@ function scopedRules(table: RuleTable, stack: string[]): ScopedRules {
       expression: new RegExp(alternatives.join('|') || '(?!)', 'g'),
       percentEncode: stack.includes('autolink'),
     }
-    table.scopes.set(key, result)
+    node.rules = result
   }
   return result
 }

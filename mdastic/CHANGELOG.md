@@ -7,6 +7,14 @@
 3. **Intraword underscores are not escaped.** `snake_case` and `x86__64` stay as written instead of `snake\_case` and `x86\_\_64`. Underscores next to a character that sits beside an attention marker are still escaped, as that character may be encoded later. Matches `mdast-util-to-markdown` `9109d40`.
 4. **Line endings that would end a paragraph are encoded.** A text line ending next to another one becomes `&#xA;` or `&#xD;` instead of a blank line, and a hard break before attention is no longer encoded as `\&#xA;`. Matches `mdast-util-to-markdown` `b2fff9f` and `8011c78`.
 5. **HTML kinds are told apart.** A line ending before inline HTML only turns into a space when that HTML could start a block (`a\n<x>` stays as is), and in tight lists HTML that only ends at a blank line, or that cannot interrupt the paragraph before it, gets a blank line. Matches `mdast-util-to-markdown` `2397cec`.
+6. **Attention picks its markers from its neighbors.** Emphasis, strong and GFM strikethrough are serialized per phrasing container: each picks a sequence (`*` or `_`, `~~` or `~`), and when a sequence would not form its node when parsed back, another one is tried until all of them form.
+
+   ```ts
+   stringify(parse('**a**__b__'))  // '**a**__b__\n', was '**a****b**\n'
+   stringify(parse('_*.*_'))       // '*_._*\n', was '**.**\n'
+   ```
+
+   Matches `mdast-util-to-markdown` `388140e`.
 
 ## 0.5.1
 
