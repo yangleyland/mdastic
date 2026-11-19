@@ -2582,5 +2582,7 @@
   {"name": "stringify: an encoded line feed after text and a backslash is not escaped twice", "input": "a\\\\&#10;", "syntax": []},
   {"name": "stringify: ampersands in fenced code info and meta are escaped", "input": "```a&amp;b c&amp;d\n```", "syntax": []},
   {"name": "stringify: ampersands in definition destinations and titles are escaped", "input": "[a]\n\n[a]: b&amp;c 'd&amp;e'", "syntax": []},
-  {"name": "stringify: html after a definition that ends a nested list in a tight item gets a blank line", "input": "-   2. [a]: b\n    <x>", "syntax": []}
+  {"name": "stringify: html after a definition that ends a nested list in a tight item gets a blank line", "input": "-   2. [a]: b\n    <x>", "syntax": []},
+  {"name": "stringify: a link at the start of a line whose text could form a definition gets an empty title", "input": "x\n[`a]:`](b)", "syntax": []},
+  {"name": "stringify: a link with an empty url whose text could form a definition gets an enclosed url and empty title", "input": "x\n[`a]:`]()", "syntax": []}
 ]

@@ -612,13 +612,11 @@ function link(node: M.Link, _: any, state: State, info: Info) {
   const quote = checkQuote(state)
   const suffix = quote === '"' ? 'Quote' : 'Apostrophe'
   const tracker = state.createTracker(info)
-  let exit: () => void
-  let subexit: () => void
   if (formatLinkAsAutolink(node, state)) {
     // Autolinks reset scope so enclosing constructs do not escape the URL text.
     const stack = state.stack
     state.stack = stack.filter(notPhrasing)
-    exit = state.enter('autolink')
+    const exit = state.enter('autolink')
     let autolinkValue = tracker.move('<')
     autolinkValue += tracker.move(
       state.containerPhrasing(node, {
@@ -632,19 +630,28 @@ function link(node: M.Link, _: any, state: State, info: Info) {
     state.stack = stack
     return autolinkValue
   }
-  exit = state.enter('link')
-  subexit = state.enter('label')
+  const exit = state.enter('link')
+  let subexit = state.enter('label')
   let value = tracker.move('[')
-  value += tracker.move(
-    state.containerPhrasing(node, {
-      before: value,
-      after: '](',
-      ...tracker.current(),
-    }),
-  )
-  value += tracker.move('](')
+  const text = state.containerPhrasing(node, {
+    before: value,
+    after: '](',
+    ...tracker.current(),
+  })
+  value += tracker.move(text)
   subexit()
-  if ((!node.url && node.title) || /[\0- \u007F]/.test(node.url)) {
+  value += tracker.move('](')
+  const enclose = /[\0- \u007F]/.test(node.url)
+  const last = info.before.charAt(info.before.length - 1)
+  let title = node.title || undefined
+  if (!title && !enclose && (last === '\n' || last === '\r')) {
+    let index = 0
+    while (index < text.length && text.charCodeAt(index) !== Char.RightBracket) {
+      index += text.charCodeAt(index) === Char.Backslash ? 2 : 1
+    }
+    if (text.charCodeAt(index + 1) === Char.Colon) title = ''
+  }
+  if ((!node.url && typeof title === 'string') || enclose) {
     subexit = state.enter('destinationLiteral')
     value += tracker.move('<')
     value += tracker.move(state.safe(node.url, { before: value, after: '>' }))
@@ -654,16 +661,16 @@ function link(node: M.Link, _: any, state: State, info: Info) {
     value += tracker.move(
       state.safe(node.url, {
         before: value,
-        after: node.title ? ' ' : ')',
+        after: typeof title === 'string' ? ' ' : ')',
       }),
     )
   }
   subexit()
-  if (node.title) {
+  if (typeof title === 'string') {
     subexit = state.enter(`title${suffix}`)
     value += tracker.move(' ' + quote)
     value += tracker.move(
-      state.safe(node.title, {
+      state.safe(title, {
         before: value,
         after: quote,
       }),
