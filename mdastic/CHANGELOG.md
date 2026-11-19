@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+1. **GFM tables match `mdast-util-gfm-table` 2.0.1.** Rows keep their own cell count instead of being padded to the longest row, the header widens to `align` or the longest row, a table in a tight list item is followed by a blank line before a paragraph, definition, setext heading or table, and a pipe in inline code in a cell is only escaped when an even number of backslashes precede it.
+
+   ```ts
+   stringify(parse('| a | b |\n| - | - |\n| c |', { syntax }), { syntax })
+   // '| a | b |\n| - | - |\n| c |\n', was '| a | b |\n| - | - |\n| c |   |\n'
+   ```
+
 ## 0.5.1
 
 1. **Unclosed `<!--` comments with `htmlComments` follow CommonMark.** A comment that starts a block and never closes now runs to the end of its container, like a browser hides the rest of the page, instead of returning an MDX error.

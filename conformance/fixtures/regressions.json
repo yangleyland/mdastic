@@ -2555,5 +2555,7 @@
   {"name": "MDX end-tag mismatch error is the closing tag range", "input": "<Heading>text</Cards>", "syntax": ["mdx", "frontmatter", "gfm"]},
   {"name": "MDX non-ESM error is the statement range", "input": "export const a = 1\nlet b = 2", "syntax": ["mdx", "frontmatter", "gfm"]},
   {"name": "MDX unclosed fence in an open flow tag keeps the list item end", "input": "- <A>\n  ```\n  x\n- b", "syntax": ["mdx", "frontmatter", "gfm"]},
-  {"name": "MDX unclosed fence in a list in an open flow tag in a footnote", "input": "[^a]:<A>\n    - ```\n      x\n", "syntax": ["mdx", "frontmatter", "gfm"]}
+  {"name": "MDX unclosed fence in a list in an open flow tag in a footnote", "input": "[^a]:<A>\n    - ```\n      x\n", "syntax": ["mdx", "frontmatter", "gfm"]},
+  {"name": "stringify: table rows shorter than the header keep their own cell count", "input": "| a | b |\n| - | - |\n| c |", "syntax": ["gfm"]},
+  {"name": "stringify: a table header shorter than a row is not padded to the row", "input": "| a |\n| - |\n| b | c |", "syntax": ["gfm"]}
 ]

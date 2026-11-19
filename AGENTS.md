@@ -212,7 +212,9 @@ per-scope candidate tables, so `safe()` scans each value once instead of running
 `conformance/package.json` (mdast-util-from-markdown 2.0.3, mdast-util-to-markdown 2.1.2,
 micromark-extension-gfm 3.0.0, -mdxjs 3.0.0, -frontmatter 2.0.0, -math 3.1.0, mdast-util-math 3.0.0,
 micromark-heading-id 2.0.0). Extensions are registered in safe-mdx / holocron order: mdx,
-frontmatter `['yaml', 'toml']`, gfm, math (remark-math defaults), then headingId. Upgrading the
+frontmatter `['yaml', 'toml']`, gfm, math (remark-math defaults), then headingId. A pnpm
+override in `pnpm-workspace.yaml` pins mdast-util-gfm-table 2.0.1 with markdown-table 3.1.0
+(rows keep their own cell count, `fillRows: false`). Upgrading the
 oracle means rerunning everything; differences become work.
 
 ```text
@@ -243,7 +245,7 @@ markdown inputs is useful, even suites that only assert HTML.
 | micromark-extension-math, mdast-util-math, remark-math, Sätteri and pulldown-cmark math tests; d2l-en; real documents with `$` | `scripts/extract-math.ts` |
 | hand-written bugs and edge cases | `conformance/fixtures/regressions.json`, `smoke.json` |
 
-`conformance/stringify-fixtures/` holds 838 hand-built trees with options, captured from the
+`conformance/stringify-fixtures/` holds 878 hand-built trees with options, captured from the
 upstream `toMarkdown` tests. Candidate suites not yet extracted are in `docs/test-suites.md`.
 
 ### Adding fixtures
