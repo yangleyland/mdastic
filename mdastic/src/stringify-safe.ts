@@ -89,11 +89,15 @@ function condition(source: string): Condition {
         if (expression.test(String.fromCharCode(code))) result.characters[code] = 1
       }
     } else {
-      result.literal = value.replace(/\\(.)/g, '$1')
+      result.literal = value.replace(/\\(.)/g, unescapeLiteral)
     }
   }
   conditions.set(source, result)
   return result
+}
+
+function unescapeLiteral(_: string, character: string) {
+  return character === 'n' ? '\n' : character === 'r' ? '\r' : character === 't' ? '\t' : character
 }
 
 export function prepareRules(config: Config, patterns: Unsafe[], custom = false): RuleTable {
@@ -176,14 +180,17 @@ function scopedRules(table: RuleTable, stack: string[]): ScopedRules {
       if (rules.some((rule) => !rule.before && !rule.after && !rule.pattern.atBreak)) {
         codes.push(character)
       } else {
+        const conditions: string[] = []
         for (const { pattern } of rules) {
-          const before = (pattern.atBreak ? '[\\r\\n][\\t ]*' : '') + (pattern.before || '')
-          alternatives.push(
-            (before ? '(?<=' + before + ')' : '') +
-              character +
+          const before =
+            (pattern.atBreak ? '[\\r\\n][\\t ]*' : '') +
+            (pattern.before ? '(?:' + pattern.before + ')' : '')
+          conditions.push(
+            (before ? '(?<=' + before + character + ')' : '') +
               (pattern.after ? '(?=' + pattern.after + ')' : ''),
           )
         }
+        alternatives.push(character + '(?:' + conditions.join('|') + ')')
       }
     }
     if (codes.length) alternatives.unshift('[' + codes.join('') + ']')

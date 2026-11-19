@@ -2565,5 +2565,9 @@
   {"name": "stringify: an astral character before emphasis in a paragraph is encoded whole", "input": "&#x1F600;*<b>*", "syntax": []},
   {"name": "stringify: intraword underscores and underscore runs stay unescaped", "input": "snake_case and x86__64", "syntax": []},
   {"name": "stringify: a trailing underscore is still escaped after an intraword one", "input": "a_b_", "syntax": []},
-  {"name": "stringify: underscores next to a character beside an attention marker stay escaped", "input": "**a_b**", "syntax": []}
+  {"name": "stringify: underscores next to a character beside an attention marker stay escaped", "input": "**a_b**", "syntax": []},
+  {"name": "stringify: encoded line feeds that would make a blank line stay encoded", "input": "a&#10;&#10;b", "syntax": []},
+  {"name": "stringify: encoded carriage returns that would make a blank line stay encoded", "input": "a&#13;&#13;b", "syntax": []},
+  {"name": "stringify: a hard break before strong is not encoded", "input": "a\\\n**&#32;x**", "syntax": []},
+  {"name": "stringify: a hard break before emphasis is not encoded", "input": "a\\\n*&#32;x*", "syntax": []}
 ]

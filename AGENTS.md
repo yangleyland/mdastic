@@ -197,6 +197,8 @@ per-scope candidate tables, so `safe()` scans each value once instead of running
   only the `phrasing` scope, so enclosing constructs such as table cells still escape `|`.
 - Intraword `_` runs stay unescaped when every underscore of the run was a candidate and both
   neighbors are letters that are not next to an attention marker.
+- Conditional candidates test their character before their lookarounds (`\n(?:(?<=\n\n)|(?=\r))`),
+  so frequent characters such as line endings with only conditional rules stay cheap.
 - Position tracking only runs when custom `handlers` or a finite MDX `printWidth` need it.
 - **Fragile:** escaping peeks at most one character into the next text node. This assumes the
   built-in unsafe rules never look further. It still holds for the intraword `_` check: it scans
@@ -215,7 +217,7 @@ per-scope candidate tables, so `safe()` scans each value once instead of running
 ### The oracle
 
 `conformance/src/oracle.ts` runs the real remark stack, pinned to exact versions in
-`conformance/package.json` (mdast-util-from-markdown 2.0.3, mdast-util-to-markdown at git commit `9109d40`,
+`conformance/package.json` (mdast-util-from-markdown 2.0.3, mdast-util-to-markdown at git commit `8011c78`,
 micromark-extension-gfm 3.0.0, -mdxjs 3.0.0, -frontmatter 2.0.0, -math 3.1.0, mdast-util-math 3.0.0,
 micromark-heading-id 2.0.0). Extensions are registered in safe-mdx / holocron order: mdx,
 frontmatter `['yaml', 'toml']`, gfm, math (remark-math defaults), then headingId. A pnpm
@@ -251,7 +253,7 @@ markdown inputs is useful, even suites that only assert HTML.
 | micromark-extension-math, mdast-util-math, remark-math, Sätteri and pulldown-cmark math tests; d2l-en; real documents with `$` | `scripts/extract-math.ts` |
 | hand-written bugs and edge cases | `conformance/fixtures/regressions.json`, `smoke.json` |
 
-`conformance/stringify-fixtures/` holds 824 hand-built trees with options, captured from the
+`conformance/stringify-fixtures/` holds 833 hand-built trees with options, captured from the
 upstream `toMarkdown` tests. Candidate suites not yet extracted are in `docs/test-suites.md`.
 
 ### Adding fixtures

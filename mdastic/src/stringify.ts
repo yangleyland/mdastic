@@ -166,9 +166,12 @@ function quoteLine(line: string, _: any, blank: boolean) {
 function hardBreak(_: any, _1: any, state: State, info: Info) {
   let index = -1
   while (++index < state.unsafe.length) {
+    const pattern = state.unsafe[index]
     if (
-      state.unsafe[index].character === '\n' &&
-      patternInScope(state.stack, state.unsafe[index])
+      pattern.character === '\n' &&
+      !pattern.before &&
+      !pattern.after &&
+      patternInScope(state.stack, pattern)
     ) {
       return /[\t ]/.test(info.before) ? '' : ' '
     }
@@ -1070,6 +1073,10 @@ const unsafe: Unsafe[] = [
       'headingAtx',
     ],
   },
+  { character: '\r', before: '[\\r\\n]', inConstruct: 'phrasing' },
+  { character: '\r', after: '\\r', inConstruct: 'phrasing' },
+  { character: '\n', before: '\\n', inConstruct: 'phrasing' },
+  { character: '\n', after: '[\\r\\n]', inConstruct: 'phrasing' },
   { character: ' ', after: '[\\r\\n]', inConstruct: 'phrasing' },
   { character: ' ', before: '[\\r\\n]', inConstruct: 'phrasing' },
   {
@@ -1262,7 +1269,14 @@ function containerPhrasing(parent: any, state: State, info: Info) {
     encodeAfter = void 0
     if (encodingInfo) {
       const previous = results[results.length - 1]
-      if (previous !== undefined && encodingInfo.before && before === lastCharacter(previous)) {
+      if (
+        previous !== undefined &&
+        encodingInfo.before &&
+        before !== '\n' &&
+        before !== '\r' &&
+        before === lastCharacter(previous)
+      ) {
+
         results[results.length - 1] =
           previous.slice(0, previous.length - before.length) + encodeCodePoint(before)
       }

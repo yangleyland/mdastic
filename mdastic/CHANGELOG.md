@@ -5,6 +5,7 @@
 1. **Autolinks are not escaped with backslashes.** Character escapes and references do not work in autolinks, so `stringify` keeps `\` as is and percent-encodes the characters an autolink cannot hold (`<`, `>`, controls, space, and characters custom `unsafe` patterns mark in `autolink`). References and autolinks in GFM table cells keep the `\|` escape. Matches `mdast-util-to-markdown` `2facc8f`.
 2. **Astral characters around attention are encoded whole.** An emoji that must be encoded next to emphasis or strong becomes one character reference (`&#x1F600;`) instead of a lone surrogate plus a reference to the other half. Matches `mdast-util-to-markdown` `7ce8eae`.
 3. **Intraword underscores are not escaped.** `snake_case` and `x86__64` stay as written instead of `snake\_case` and `x86\_\_64`. Underscores next to a character that sits beside an attention marker are still escaped, as that character may be encoded later. Matches `mdast-util-to-markdown` `9109d40`.
+4. **Line endings that would end a paragraph are encoded.** A text line ending next to another one becomes `&#xA;` or `&#xD;` instead of a blank line, and a hard break before attention is no longer encoded as `\&#xA;`. Matches `mdast-util-to-markdown` `b2fff9f` and `8011c78`.
 
 ## 0.5.1
 
