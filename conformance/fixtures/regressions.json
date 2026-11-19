@@ -2569,5 +2569,7 @@
   {"name": "stringify: encoded line feeds that would make a blank line stay encoded", "input": "a&#10;&#10;b", "syntax": []},
   {"name": "stringify: encoded carriage returns that would make a blank line stay encoded", "input": "a&#13;&#13;b", "syntax": []},
   {"name": "stringify: a hard break before strong is not encoded", "input": "a\\\n**&#32;x**", "syntax": []},
-  {"name": "stringify: a hard break before emphasis is not encoded", "input": "a\\\n*&#32;x*", "syntax": []}
+  {"name": "stringify: a hard break before emphasis is not encoded", "input": "a\\\n*&#32;x*", "syntax": []},
+  {"name": "stringify: a line ending before inline html that cannot interrupt a paragraph is kept", "input": "a\n<x>", "syntax": []},
+  {"name": "stringify: a hard break before inline html that cannot interrupt a paragraph is kept", "input": "a  \n<x>", "syntax": []}
 ]

@@ -35,11 +35,21 @@ import {
 } from './stringify-safe.ts'
 import { entities as characterEntities } from './entities.ts'
 import type { Config } from './syntax.ts'
-import { Char, TAB_SIZE } from './scan.ts'
+import { Char, TAB_SIZE, alpha, digit } from './scan.ts'
+import { htmlBlocks } from './block.ts'
 
 const MIN_FENCE_LENGTH = 3
 const MAX_HEADING_DEPTH = 6
 const MIN_THEMATIC_MARKERS = 3
+const enum HtmlKind {
+  Raw = 1,
+  Comment = 2,
+  Instruction = 3,
+  Declaration = 4,
+  Cdata = 5,
+  Basic = 6,
+  Complete = 7,
+}
 const enum Surrogate {
   HighStart = 0xd800,
   HighEnd = 0xdbff,
@@ -1033,6 +1043,14 @@ function joinDefaults(left: any, right: any, parent: any, state: State) {
     ) {
       return
     }
+    if (left.type === 'html') {
+      const kind = htmlKind(left.value)
+      if (kind === undefined || kind === HtmlKind.Basic || kind === HtmlKind.Complete) return 1
+    }
+    if (left.type === 'paragraph' && right.type === 'html') {
+      const kind = htmlKind(right.value)
+      if (kind === undefined || kind === HtmlKind.Complete) return 1
+    }
     return parent.spread ? 1 : 0
   }
 }
@@ -1240,7 +1258,12 @@ function containerPhrasing(parent: any, state: State, info: Info) {
       after = info.after
     }
     // A newline before inline HTML would reparse as flow HTML; replace it with a space.
-    if (results.length > 0 && (before === '\r' || before === '\n') && child.type === 'html') {
+    if (
+      results.length > 0 &&
+      (before === '\r' || before === '\n') &&
+      child.type === 'html' &&
+      htmlKind(child.value) !== HtmlKind.Complete
+    ) {
       results[results.length - 1] = results[results.length - 1].replace(/(\r?\n|\r)$/, ' ')
       before = ' '
       tracker = state.createTracker(info)
@@ -1289,6 +1312,28 @@ function containerPhrasing(parent: any, state: State, info: Info) {
   }
   indexStack.pop()
   return results.join('')
+}
+const htmlRawNames = new Set(['pre', 'script', 'style', 'textarea'])
+function htmlKind(value: string): HtmlKind | undefined {
+  if (value.charCodeAt(0) !== Char.LessThan) return
+  const next = value.charCodeAt(1)
+  if (next === Char.Exclamation) {
+    const code = value.charCodeAt(2)
+    if (code === Char.Hyphen) return HtmlKind.Comment
+    if (code === Char.LeftBracket) return HtmlKind.Cdata
+    if (alpha(code)) return HtmlKind.Declaration
+    return
+  }
+  if (next === Char.Question) return HtmlKind.Instruction
+  const closing = next === Char.Slash
+  const start = closing ? 2 : 1
+  let end = start
+  let code = value.charCodeAt(end)
+  if (!alpha(code)) return
+  while (code === Char.Hyphen || alpha(code) || digit(code)) code = value.charCodeAt(++end)
+  const name = value.slice(start, end).toLowerCase()
+  if (!closing && code !== Char.Slash && htmlRawNames.has(name)) return HtmlKind.Raw
+  return htmlBlocks.has(name) ? HtmlKind.Basic : HtmlKind.Complete
 }
 function containerFlow(parent: any, state: State, info: Info) {
   const indexStack = state.indexStack

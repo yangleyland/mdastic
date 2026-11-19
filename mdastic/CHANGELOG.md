@@ -6,6 +6,7 @@
 2. **Astral characters around attention are encoded whole.** An emoji that must be encoded next to emphasis or strong becomes one character reference (`&#x1F600;`) instead of a lone surrogate plus a reference to the other half. Matches `mdast-util-to-markdown` `7ce8eae`.
 3. **Intraword underscores are not escaped.** `snake_case` and `x86__64` stay as written instead of `snake\_case` and `x86\_\_64`. Underscores next to a character that sits beside an attention marker are still escaped, as that character may be encoded later. Matches `mdast-util-to-markdown` `9109d40`.
 4. **Line endings that would end a paragraph are encoded.** A text line ending next to another one becomes `&#xA;` or `&#xD;` instead of a blank line, and a hard break before attention is no longer encoded as `\&#xA;`. Matches `mdast-util-to-markdown` `b2fff9f` and `8011c78`.
+5. **HTML kinds are told apart.** A line ending before inline HTML only turns into a space when that HTML could start a block (`a\n<x>` stays as is), and in tight lists HTML that only ends at a blank line, or that cannot interrupt the paragraph before it, gets a blank line. Matches `mdast-util-to-markdown` `2397cec`.
 
 ## 0.5.1
 
