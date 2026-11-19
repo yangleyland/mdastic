@@ -15,6 +15,7 @@
    ```
 
    Matches `mdast-util-to-markdown` `388140e`.
+7. **Custom `unsafe` patterns support `beforeNode`, `afterNode` and `unicode`.** `beforeNode` and `afterNode` (a node type or a list of them) only match at the start or end of a text node whose previous or next sibling has that type, and `unicode` compiles the pattern with the `u` flag. Matches `mdast-util-to-markdown` `9039999`.
 
 ## 0.5.1
 

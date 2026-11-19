@@ -940,8 +940,15 @@ function textPeek(node: M.Text, parent: any, state: State, info: Info) {
     }).charAt(0)
   return text(node, parent, state, info)
 }
-function text(node: M.Text, _: any, state: State, info: Info) {
-  return state.safe(node.value, info)
+function text(node: M.Text, parent: any, state: State, info: Info) {
+  if (!state.rules.custom) return state.safe(node.value, info)
+  const siblings = parent ? parent.children : []
+  const index = state.indexStack[state.indexStack.length - 1]
+  return state.safe(node.value, {
+    ...info,
+    afterNode: siblings[index + 1],
+    beforeNode: siblings[index - 1],
+  })
 }
 function checkRuleRepetition(state: State) {
   const repetition = state.options.ruleRepetition || MIN_THEMATIC_MARKERS

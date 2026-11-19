@@ -30,12 +30,17 @@ export interface Unsafe {
   atBreak?: boolean
   inConstruct?: string | string[]
   notInConstruct?: string | string[]
+  beforeNode?: string | string[]
+  afterNode?: string | string[]
+  unicode?: boolean
 }
 
 export interface SafeConfig {
   before?: string
   after?: string
   encode?: string[]
+  beforeNode?: { type: string }
+  afterNode?: { type: string }
 }
 
 interface Condition {
@@ -156,10 +161,10 @@ export function compilePattern(pattern: Unsafe): RegExp {
       (pattern.before ? '(?:' + pattern.before + ')' : '')
     const character = pattern.character.replace(/[$()*+.?[\\\]^{|}]/g, '\\$&')
     expression = new RegExp(
-      (before ? '(' + before + ')' : '') +
+      (pattern.beforeNode ? '^' : before ? '(' + before + ')' : '') +
         character +
-        (pattern.after ? '(?:' + pattern.after + ')' : ''),
-      'g',
+        (pattern.afterNode ? '$' : pattern.after ? '(?:' + pattern.after + ')' : ''),
+      pattern.unicode ? 'gu' : 'g',
     )
     expressions.set(pattern, expression)
   }
@@ -300,6 +305,12 @@ export function classifyCharacter(code: number): CharacterKind | undefined {
   if (unicodePunctuation.test(character)) return CharacterKind.Punctuation
 }
 
+function nodeInScope(types: string | string[] | undefined, node: { type: string } | undefined) {
+  if (!types) return true
+  if (!node) return false
+  return typeof types === 'string' ? types === node.type : types.includes(node.type)
+}
+
 function attentionMarker(code: number) {
   return code === Char.Asterisk || code === Char.Underscore
 }
@@ -330,15 +341,24 @@ export function safe(
   next.fill(0)
   const matches: number[] = []
   const positions: number[] = []
+  const offset = prefix.length
+  const end = value.length - suffix.length
   // ── Custom patterns keep regex-style nonoverlapping matches ──
   if (table.custom) {
     for (const { pattern, expression } of table.custom) {
-      if (!patternInScope(state.stack, pattern)) continue
+      if (
+        !patternInScope(state.stack, pattern) ||
+        !nodeInScope(pattern.beforeNode, config.beforeNode) ||
+        !nodeInScope(pattern.afterNode, config.afterNode)
+      )
+        continue
+      const from = pattern.beforeNode ? offset : 0
+      const subject = value.slice(from, pattern.afterNode ? end : undefined)
       expression.lastIndex = 0
       let match: RegExpExecArray | null
-      while ((match = expression.exec(value))) {
+      while ((match = expression.exec(subject))) {
         const before = 'before' in pattern || Boolean(pattern.atBreak)
-        const position = match.index + (before ? match[1].length : 0)
+        const position = from + match.index + (before ? match[1].length : 0)
         const flags =
           EscapeFlag.Match |
           (before ? EscapeFlag.Before : 0) |
@@ -391,8 +411,6 @@ export function safe(
     }
   }
   // ── Suppress redundant adjacent conditional escapes and emit the result ──
-  const offset = prefix.length
-  const end = value.length - suffix.length
   let start = offset
   let result = ''
   for (let index = 0; index < positions.length; index++) {
