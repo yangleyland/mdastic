@@ -1076,7 +1076,21 @@ const unsafe: Unsafe[] = [
   { character: '"', inConstruct: 'titleQuote' },
   { atBreak: true, character: '#' },
   { character: '#', inConstruct: 'headingAtx', after: '(?:[\r\n]|$)' },
-  { character: '&', after: '[#A-Za-z]', inConstruct: 'phrasing' },
+  {
+    character: '&',
+    after: '[#A-Za-z]',
+    inConstruct: [
+      'codeFencedLangGraveAccent',
+      'codeFencedLangTilde',
+      'codeFencedMetaGraveAccent',
+      'codeFencedMetaTilde',
+      'destinationLiteral',
+      'destinationRaw',
+      'phrasing',
+      'titleApostrophe',
+      'titleQuote',
+    ],
+  },
   { character: "'", inConstruct: 'titleApostrophe' },
   { character: '(', inConstruct: 'destinationRaw' },
   {

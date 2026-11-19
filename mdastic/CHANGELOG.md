@@ -18,6 +18,7 @@
 7. **Custom `unsafe` patterns support `beforeNode`, `afterNode` and `unicode`.** `beforeNode` and `afterNode` (a node type or a list of them) only match at the start or end of a text node whose previous or next sibling has that type, and `unicode` compiles the pattern with the `u` flag. Matches `mdast-util-to-markdown` `9039999`.
 8. **An escape is no longer dropped after unsafe characters before the value.** A character with a `before` condition at the start of a value was left unescaped when the character before it (outside the value) was itself unsafe, as in `[x[^a]\(/u)](/z)` with a defined footnote. Matches `mdast-util-to-markdown` `9df739f`.
 9. **Backslashes before escapes and references are counted.** An escape emits `\` plus the character, so a backslash before an encoded character is no longer escaped twice (`\\&#xA;`, was `\\\&#xA;`), and a backslash before a character encoded for attention is escaped so it does not escape the `&`. Matches `mdast-util-to-markdown` `8304b43`.
+10. **`&` is escaped in code info and meta, destinations and titles**, where a following `#` or letter would otherwise read as a character reference (`[a]: b\&c`, was `[a]: b&c`). Matches `mdast-util-to-markdown` `62804be`.
 
 ## 0.5.1
 
