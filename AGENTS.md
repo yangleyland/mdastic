@@ -225,7 +225,7 @@ value once instead of running every regex.
 ### The oracle
 
 `conformance/src/oracle.ts` runs the real remark stack, pinned to exact versions in
-`conformance/package.json` (mdast-util-from-markdown 2.0.3, mdast-util-to-markdown at git commit `9df739f`,
+`conformance/package.json` (mdast-util-from-markdown 2.0.3, mdast-util-to-markdown at git commit `36d4d65`,
 micromark-extension-gfm 3.0.0, -mdxjs 3.0.0, -frontmatter 2.0.0, -math 3.1.0, mdast-util-math 3.0.0,
 micromark-heading-id 2.0.0). Extensions are registered in safe-mdx / holocron order: mdx,
 frontmatter `['yaml', 'toml']`, gfm, math (remark-math defaults), then headingId. A pnpm

@@ -377,7 +377,8 @@ emphasis.attention = emphasisAttention
 emphasis.peek = emphasisPeek
 function emphasis(node: M.Emphasis, _: any, state: State, info: Info) {
   const exit = state.enter('phrasing')
-  const value = state.containerPhrasing({ type: 'root', children: [node] }, info)
+  const item = attentionItem(node, emphasisAttention, state, state.createTracker(info))
+  const value = serializeItems([item], info.before, info.after)
   exit()
   return value
 }
@@ -914,7 +915,8 @@ strong.attention = strongAttention
 strong.peek = strongPeek
 function strong(node: M.Strong, _: any, state: State, info: Info) {
   const exit = state.enter('phrasing')
-  const value = state.containerPhrasing({ type: 'root', children: [node] }, info)
+  const item = attentionItem(node, strongAttention, state, state.createTracker(info))
+  const value = serializeItems([item], info.before, info.after)
   exit()
   return value
 }
@@ -1320,50 +1322,53 @@ function improve(
   }
 }
 function pair(runs: Run[], wrong: Map<Token, Token[]>) {
-  let index = 0
-  while (index < runs.length) {
-    const closer = runs[index]
+  const openersByMarker = new Map<string, Run[]>()
+  for (const closer of runs) {
     const marker = closer.tokens[0].value.charAt(0)
-    const closerSize = closer.end - closer.start
-    let open = closer.close && closerSize ? index : 0
-    while (open--) {
-      const opener = runs[open]
-      const openerSize = opener.end - opener.start
-      if (
-        opener.tokens[0].value.charAt(0) === marker &&
-        opener.open &&
-        openerSize &&
-        (closer.split
-          ? !((opener.close || closer.open) && closerSize % 3) || (openerSize + closerSize) % 3
-          : openerSize === opener.markers.length && openerSize === closerSize)
-      ) {
-        const size = closer.split ? (openerSize > 1 && closerSize > 1 ? 2 : 1) : closerSize
-        const opening = opener.markers.slice(opener.end - size, opener.end)
-        const closing = closer.markers.slice(closer.start, closer.start + size)
-        const openToken = opening[0]
-        const closeToken = closing[0]
-        if (
-          openToken === opening[size - 1] &&
-          openToken.value.length === size &&
-          closeToken === closing[size - 1] &&
-          closeToken.value.length === size &&
-          openToken.attention === closeToken.attention
-        ) {
-          wrong.delete(openToken)
-          wrong.delete(closeToken)
-        } else {
-          const involved = [...new Set([...opening, ...closing])]
-          for (const token of involved) {
-            const list = wrong.get(token)
-            if (list) list.push(...involved)
-          }
-        }
-        opener.end -= size
-        closer.start += size
-        break
-      }
+    let openers = openersByMarker.get(marker)
+    if (!openers) {
+      openers = []
+      openersByMarker.set(marker, openers)
     }
-    if (open === -1 || closer.start === closer.end) index++
+    let open = closer.close ? openers.length : 0
+    while (open-- && closer.start < closer.end) {
+      const opener = openers[open]
+      const openerSize = opener.end - opener.start
+      const closerSize = closer.end - closer.start
+      if (
+        closer.split
+          ? (opener.close || closer.open) && closerSize % 3 && !((openerSize + closerSize) % 3)
+          : openerSize !== opener.markers.length || openerSize !== closerSize
+      ) {
+        continue
+      }
+      const size = closer.split ? (openerSize > 1 && closerSize > 1 ? 2 : 1) : closerSize
+      const opening = opener.markers.slice(opener.end - size, opener.end)
+      const closing = closer.markers.slice(closer.start, closer.start + size)
+      const openToken = opening[0]
+      const closeToken = closing[0]
+      if (
+        openToken === opening[size - 1] &&
+        openToken.value.length === size &&
+        closeToken === closing[size - 1] &&
+        closeToken.value.length === size &&
+        openToken.attention === closeToken.attention
+      ) {
+        wrong.delete(openToken)
+        wrong.delete(closeToken)
+      } else {
+        const involved = [...new Set([...opening, ...closing])]
+        for (const token of involved) {
+          const list = wrong.get(token)
+          if (list) list.push(...involved)
+        }
+      }
+      opener.end -= size
+      closer.start += size
+      if (opener.start === opener.end) openers.splice(open, 1)
+      open = openers.length
+    }
+    if (closer.open && closer.start < closer.end) openers.push(closer)
   }
 }
 export function attentionSpec(construct: string, markers: string[], sizes: number[]) {
